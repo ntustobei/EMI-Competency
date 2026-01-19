@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMI 學生素養分層分析儀表板</title>
+    <!-- 核心庫載入 -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+    <script src="https://unpkg.com/recharts@2.12.0/umd/Recharts.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        .bg-stats-bar { height: 54px; border-radius: 27px; overflow: hidden; display: flex; align-items: center; background-color: #f3f4f6; border: 1px solid #e5e7eb; }
+        .bg-stats-segment { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 1000; color: white; transition: width 1s ease-in-out; text-shadow: 0px 1px 3px rgba(0,0,0,0.3); }
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+        <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
+        <p class="mt-4 font-black text-gray-400 animate-pulse">數據引擎初始化中...</p>
+    </div>
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { 
+            BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+            Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+            Cell, ComposedChart, Line, LabelList
+        } = window.Recharts;
+
+        // ==========================================
+        // 🚀 數據源連結設定
+        // ==========================================
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSwjy6yzJBLRTkUDWHqtL62BvHMBlnbkzokDViZuIXUqTy7vd2_gy3I6Oyn3WWi0_46K_50-XMoZ7bs/pub?gid=1366984866&single=true&output=csv"; 
+
+        const SimpleIcon = ({ name, color = "#666", size = 20 }) => {
+            const icons = {
+                users: `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`,
+                globe: `<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20"/><path d="M2 12h20"/><path d="M12 2a14.5 14.5 0 0 1 0 20"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/>`,
+                smile: `<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>`,
+                venusmars: `<path d="M12 2v10"/><path d="M12 12c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6z"/><path d="M12 18c-3.3 0-6 2.7-6 6v2h12v-2c0-3.3-2.7-6-6-6z"/>`,
+                target: `<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>`,
+                book: `<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-0.5-5"/><path d="M6.5 17.5c-1.38 0-2.5 1.12-2.5 2.5"/>`,
+                brain: `<path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.78-3.06 2.5 2.5 0 0 1-2.12-4.16 2.5 2.5 0 0 1-.14-4.78 2.5 2.5 0 0 1 2.5-3.94A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.78-3.06 2.5 2.5 0 0 0 2.12-4.16 2.5 2.5 0 0 0 .14-4.78 2.5 2.5 0 0 0-2.5-3.94A2.5 2.5 0 0 0 14.5 2Z"/>`,
+                zap: `<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>`,
+                star: `<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>`
+            };
+            return (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
+                     dangerouslySetInnerHTML={{ __html: icons[name] || "" }} />
+            );
+        };
+
+        const PREFERRED_ORDER = ['Overall (全校整體)', '工程學院', '電資學院', '管理學院', '應科學院', '設計學院', '人文學院', '產創學院', '通識中心'];
+
+        function parseCSV(text) {
+            const cleanText = text.replace(/^\uFEFF/, "");
+            const lines = cleanText.split(/\r?\n/).filter(l => l.trim() !== "");
+            if (lines.length < 2) return [];
+            
+            // 🚀 關鍵強化：標頭(Header)也進行 trim() 清理，避免空格導致失效
+            const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            
+            return lines.slice(1).map(line => {
+                const values = [];
+                let current = "";
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') inQuotes = !inQuotes;
+                    else if (char === ',' && !inQuotes) {
+                        values.push(current.trim());
+                        current = "";
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current.trim());
+                let obj = {};
+                header.forEach((key, idx) => {
+                    let val = values[idx] || "";
+                    val = val.replace(/^"|"$/g, '').replace(/(?!^\d+)\,(?=\d+)/g, ''); 
+                    obj[key] = val;
+                });
+                return obj;
+            });
+        }
+
+        const RadarTick = (props) => {
+            const { x, y, payload, textAnchor } = props;
+            const words = (payload.value || "").split('&');
+            return (
+                <g transform={`translate(${x},${y})`}>
+                    <text x={0} y={0} textAnchor={textAnchor} fill="#334155" style={{ fontSize: '14px', fontWeight: '900' }}>
+                        {words.map((word, i) => (
+                            <tspan key={i} x={0} dy={i === 0 ? 0 : 18}>{word}{i === 0 && words.length > 1 ? '&' : ''}</tspan>
+                        ))}
+                    </text>
+                </g>
+            );
+        };
+
+        const RenderRadarLabel = (props) => {
+            const { x, y, value } = props;
+            return <text x={x} y={y - 12} fill="#000000" textAnchor="middle" style={{ fontSize: '18px', fontWeight: '1000' }}>{value}</text>;
+        };
+
+        function App() {
+            const fallbackData = [{ 學期: "114-1", 單位: "Overall (全校整體)", 人數: 3340, 海外意願人數: 2871, 信心增加人數: 2405, 女性人數: 1101, 男性人數: 2239, 第一次修EMI人數: 1365, 非第一次修EMI人數: 1975, 自我調節學習: 3.8, "學術英語&學科學習": 3.6, Bloom認知: 3.8, 課程參與: 3.7, 自我效能: 3.8, 教師講授: 44, 師生互動: 21, 生生互動: 16, 學生報告: 15, 其他: 14 }];
+
+            const [allRows, setAllRows] = React.useState(fallbackData);
+            const [selectedSemester, setSelectedSemester] = React.useState('114-1');
+            const [selectedCollege, setSelectedCollege] = React.useState('Overall (全校整體)');
+            const [loading, setLoading] = React.useState(true);
+            const [dataStatus, setDataStatus] = React.useState('loading');
+
+            React.useEffect(() => {
+                const fetchData = async () => {
+                    try {
+                        const fetchUrl = SHEET_CSV_URL + (SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+                        const response = await fetch(fetchUrl, { cache: "no-store" });
+                        if (!response.ok) throw new Error("Network error");
+                        const text = await response.text();
+                        const data = parseCSV(text);
+                        
+                        if (data && data.length > 0) {
+                            setAllRows(data);
+                            const firstSem = data[0].學期;
+                            setSelectedSemester(firstSem);
+                            const units = [...new Set(data.filter(r => r.學期 === firstSem).map(r => r.單位))];
+                            const defCol = PREFERRED_ORDER.find(c => units.includes(c)) || units[0];
+                            setSelectedCollege(defCol);
+                            setDataStatus('cloud');
+                        }
+                    } catch (e) {
+                        setDataStatus('error');
+                    } finally {
+                        setLoading(false);
+                        const loader = document.getElementById('loading-screen');
+                        if (loader) loader.style.display = 'none';
+                    }
+                };
+                fetchData();
+            }, []);
+
+            // 🚀 當切換學期時，確保學院選單連動到該學期有的單位
+            React.useEffect(() => {
+                if (allRows.length <= 1) return;
+                const validColleges = [...new Set(allRows.filter(r => r.學期 === selectedSemester).map(r => String(r.單位).trim()))];
+                if (!validColleges.includes(String(selectedCollege).trim())) {
+                    const nextBest = PREFERRED_ORDER.find(c => validColleges.includes(c)) || validColleges[0];
+                    if (nextBest) setSelectedCollege(nextBest);
+                }
+            }, [selectedSemester, allRows]);
+
+            const semesters = [...new Set(allRows.map(r => r.學期))].sort().reverse();
+            const currentUnits = [...new Set(allRows.filter(r => r.學期 === selectedSemester).map(r => r.單位))];
+            const sortedColleges = [
+                ...PREFERRED_ORDER.filter(name => currentUnits.includes(name)),
+                ...currentUnits.filter(name => name && !PREFERRED_ORDER.includes(name))
+            ];
+
+            const activeRaw = allRows.find(r => 
+                String(r.學期).trim() === String(selectedSemester).trim() && 
+                String(r.單位).trim() === String(selectedCollege).trim()
+            ) || allRows.find(r => String(r.學期).trim() === String(selectedSemester).trim()) || allRows[0];
+
+            const count = parseInt(activeRaw.人數 || 0);
+
+            if (loading) return null;
+
+            return (
+                <div className="max-w-7xl mx-auto p-4 md:p-8 fade-in">
+                    <header className="flex flex-col md:flex-row justify-between items-center border-b-2 border-gray-100 pb-6 mb-8 gap-6 text-center md:text-left">
+                        <div>
+                            <h1 className="text-3xl font-black text-gray-800 tracking-tight">EMI 學生素養分層分析儀表板</h1>
+                            <p className="text-gray-500 font-medium mt-1">
+                                {selectedSemester} 學期 | 當前視角: <span className="text-[#9BADC1] font-bold underline decoration-4 underline-offset-8">{selectedCollege}</span>
+                            </p>
+                            <div className="flex items-center gap-2 mt-2 justify-center md:justify-start text-[11px] font-bold">
+                                {dataStatus === 'cloud' ? <span className="text-green-600">● 雲端數據同步中</span> : <span className="text-amber-600">● 離線展示模式</span>}
+                                <span className="text-gray-300 mx-1">|</span>
+                                <p className="text-gray-400 italic">NTUST EMI HELP CENTER</p>
+                            </div>
+                        </div>
+                        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[12px] font-bold text-gray-400 uppercase tracking-widest text-center md:text-left">學期</label>
+                                <select 
+                                    className="bg-white border-2 border-gray-200 rounded-xl px-4 py-2 font-black text-gray-700 outline-none text-xl shadow-sm cursor-pointer hover:border-[#9BADC1] transition-colors"
+                                    value={selectedSemester}
+                                    onChange={(e) => setSelectedSemester(e.target.value)}
+                                >
+                                    {semesters.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                            </div>
+                            <div className="flex flex-col gap-1 min-w-[240px]">
+                                <label className="text-[12px] font-bold text-gray-400 uppercase tracking-widest text-center md:text-left">數據單位</label>
+                                <select 
+                                    className="w-full bg-white border-2 border-[#9BADC1] rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-[#9BADC1] outline-none font-black text-gray-700 text-xl transition-all cursor-pointer hover:bg-gray-50"
+                                    value={selectedCollege}
+                                    onChange={(e) => setSelectedCollege(e.target.value)}
+                                >
+                                    {sortedColleges.map(name => <option key={name} value={name}>{name}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* KPI 展示區 第一排 */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 text-center md:text-left">
+                        {[
+                            { label: '有效問卷總數', val: count.toLocaleString(), icon: 'users', color: '#8697A8' },
+                            { label: '海外讀書/工作意願', val: activeRaw.海外意願人數 || 0, icon: 'globe', color: '#C49B9B', sub: `占比: ${((parseInt(activeRaw.海外意願人數 || 0)/count)*100).toFixed(1)}%` },
+                            { label: 'EMI 增加出國信心', val: activeRaw.信心增加人數 || 0, icon: 'smile', color: '#9F97B5', sub: `占比: ${((parseInt(activeRaw.信心增加人數 || 0)/count)*100).toFixed(1)}%` },
+                            { label: '性別分布 (女/男)', val: `${activeRaw.女性人數 || 0} / ${activeRaw.男性人數 || 0}`, icon: 'venusmars', color: '#64748b' }
+                        ].map((kpi, idx) => (
+                            <div key={idx} className="bg-white border rounded-2xl p-5 shadow-sm border-t-4" style={{ borderTopColor: kpi.color }}>
+                                <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                                    <SimpleIcon name={kpi.icon} color={kpi.color} />
+                                    <span className="text-[14px] font-black text-gray-500 uppercase tracking-tight leading-tight">{kpi.label}</span>
+                                </div>
+                                <p className="text-3xl font-black text-gray-800 tracking-tighter">{kpi.val}</p>
+                                {kpi.sub && <p className="text-[12px] font-bold text-gray-400 mt-1">{kpi.sub}</p>}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* KPI 展示區 第二排 */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10 text-center">
+                        {[
+                            { label: '自我調節學習', val: activeRaw.自我調節學習, icon: 'target', color: '#8697A8' },
+                            { label: '學術英語&學科學習', val: activeRaw['學術英語&學科學習'], icon: 'book', color: '#C49B9B' },
+                            { label: 'Bloom認知', val: activeRaw.Bloom認知, icon: 'brain', color: '#9F97B5' },
+                            { label: '課程參與', val: activeRaw.課程參與, icon: 'zap', color: '#C49B9B' },
+                            { label: '自我效能', val: activeRaw.自我效能, icon: 'star', color: '#8697A8' }
+                        ].map((kpi, idx) => (
+                            <div key={idx} className="border rounded-xl p-5 shadow-lg transition-transform hover:scale-105" style={{ backgroundColor: kpi.color }}>
+                                <div className="flex items-center justify-center gap-2 mb-2">
+                                    <SimpleIcon name={kpi.icon} color="white" size={22} />
+                                    <span className="text-[15px] font-black text-white opacity-95 uppercase leading-tight">{kpi.label}</span>
+                                </div>
+                                <p className="text-5xl font-black text-white">{kpi.val}</p>
+                                <div className="w-full bg-white bg-opacity-20 h-3 mt-3 rounded-full overflow-hidden">
+                                    <div className="h-full bg-white opacity-60" style={{ width: `${(parseFloat(kpi.val || 0)/5)*100}%` }}></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-10">
+                        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                            <h3 className="text-2xl font-black text-gray-700 mb-8 border-l-8 border-[#9BADC1] pl-4 text-center md:text-left">學員背景資料分佈 (N={count})</h3>
+                            <div className="space-y-12">
+                                {[
+                                    { label: '生理性別 (女性/男性)', val: parseInt(activeRaw.女性人數 || 0), total: count, posLabel: '女性', negLabel: '男性' },
+                                    { label: '這是第一次修 EMI (是/否)', val: parseInt(activeRaw.第一次修EMI人數 || 0), total: count, posLabel: '是', negLabel: '否' },
+                                    { label: 'EMI 增加出國信心 (是/否)', val: parseInt(activeRaw.信心增加人數 || 0), total: count, posLabel: '是', negLabel: '否' },
+                                    { label: '有意願海外讀書工作 (是/否)', val: parseInt(activeRaw.海外意願人數 || 0), total: count, posLabel: '是', negLabel: '否' }
+                                ].map((item, i) => {
+                                    const pct = item.total > 0 ? (item.val / item.total) * 100 : 0;
+                                    return (
+                                        <div key={i}>
+                                            <p className="text-lg font-black text-gray-600 mb-3">{item.label}</p>
+                                            <div className="bg-stats-bar shadow-inner">
+                                                <div className="bg-stats-segment" style={{ width: `${pct}%`, backgroundColor: '#9BADC1' }}>{item.val}</div>
+                                                <div className="bg-stats-segment" style={{ width: `${100 - pct}%`, backgroundColor: '#cbd5e1', color: '#1e293b' }}>{item.total - item.val}</div>
+                                            </div>
+                                            <div className="flex justify-between text-sm text-gray-400 mt-2 font-black italic text-[14px]">
+                                                <span>{item.posLabel}</span>
+                                                <span>{item.negLabel}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center">
+                            <h3 className="text-2xl font-black text-gray-700 mb-8 text-center">{selectedCollege} 素養評分雷達</h3>
+                            <div className="h-96 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={[
+                                        { subject: '自我調節學習', A: parseFloat(activeRaw.自我調節學習 || 0) },
+                                        { subject: '學術英語&學科學習', A: parseFloat(activeRaw['學術英語&學科學習'] || 0) },
+                                        { subject: 'Bloom認知', A: parseFloat(activeRaw.Bloom認知 || 0) },
+                                        { subject: '課程參與', A: parseFloat(activeRaw.課程參與 || 0) },
+                                        { subject: '自我效能', A: parseFloat(activeRaw.自我效能 || 0) }
+                                    ]}>
+                                        <PolarGrid stroke="#cbd5e1" strokeWidth={1} />
+                                        <PolarAngleAxis dataKey="subject" tick={<RadarTick />} />
+                                        <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
+                                        <Radar name={selectedCollege} dataKey="A" stroke="#9BADC1" fill="#9BADC1" fillOpacity={0.6}>
+                                            <LabelList dataKey="A" content={RenderRadarLabel} />
+                                        </Radar>
+                                        <Tooltip />
+                                    </RadarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-10 rounded-3xl shadow-sm border border-gray-100 mb-10 text-center">
+                        <h3 className="text-3xl font-black text-gray-700 mb-12 uppercase tracking-widest">EMI 課堂教學活動占比分布 (%)</h3>
+                        <div className="h-96">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={[
+                                    { name: '教師講授', value: parseInt(activeRaw.教師講授 || 0) },
+                                    { name: '師生互動', value: parseInt(activeRaw.師生互動 || 0) },
+                                    { name: '生生互動', value: parseInt(activeRaw.生生互動 || 0) },
+                                    { name: '學生報告', value: parseInt(activeRaw.學生報告 || 0) },
+                                    { name: '其他', value: parseInt(activeRaw.其他 || 0) }
+                                ]} layout="vertical" margin={{ left: 20, right: 100 }}>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#eee" />
+                                    <XAxis type="number" domain={[0, 60]} hide />
+                                    <YAxis dataKey="name" type="category" tick={{fontSize: 18, fontWeight: '1000', fill: '#334155'}} width={120} />
+                                    <Tooltip />
+                                    <Bar dataKey="value" radius={[0, 20, 20, 0]} barSize={60}>
+                                        {[0,1,2,3,4].map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={index === 0 ? '#9BADC1' : index % 2 === 0 ? '#B9B1D2' : '#E2B4BD'} />
+                                        ))}
+                                        <LabelList dataKey="value" position="right" formatter={(v) => `${v}%`} style={{ fontSize: '24px', fontWeight: '1000', fill: '#000' }} />
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    <div className="bg-white border rounded-3xl p-8 shadow-sm mb-10 text-center md:text-left">
+                        <h3 className="text-2xl font-black text-gray-700 mb-8 border-l-8 border-[#B9B1D2] pl-4 text-sm">30 項測量細項詳細平均分趨勢</h3>
+                        <div className="h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart data={Object.keys(activeRaw)
+                                    .filter(k => /^(SRL|CALP|Cog|Eng|SE)\d+$/.test(k))
+                                    .map(k => ({ name: k, score: parseFloat(activeRaw[k]) }))}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: '900' }} interval={0} />
+                                    <YAxis domain={[0, 5]} tick={{fontSize: 14, fontWeight: '900'}} />
+                                    <Tooltip cursor={{fill: 'transparent'}} />
+                                    <Bar dataKey="score" fill="#E2B4BD" barSize={16} radius={[4, 4, 0, 0]} opacity={0.8} />
+                                    <Line type="monotone" dataKey="score" stroke="#B9B1D2" dot={{ r: 4, fill: '#B9B1D2' }} strokeWidth={4} />
+                                </ComposedChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    <div className="mt-16 text-center">
+                        <a href="https://sites.google.com/view/ntustemihelp/%E6%95%99%E5%AD%B8%E7%AD%96%E7%95%A5%E6%8E%A8%E8%96%A6" 
+                           target="_blank" rel="noopener noreferrer"
+                           className="inline-flex items-center gap-3 px-10 py-5 bg-[#8697A8] text-white rounded-full font-black text-2xl hover:bg-[#6e7d8c] transition-all shadow-md hover:shadow-2xl transform hover:-translate-y-1">
+                            <SimpleIcon name="globe" color="white" size={28} />
+                            前往：EMI 教學策略推薦 (教學支援網)
+                        </a>
+                    </div>
+
+                    <footer className="mt-12 pt-8 border-t-4 border-gray-100 text-center text-xs font-black text-gray-300 uppercase tracking-[0.6em]">
+                        {selectedSemester} | {selectedCollege} | FACILITATED BY NTUST EMI HELP CENTER
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
