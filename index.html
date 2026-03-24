@@ -1,212 +1,423 @@
 <!DOCTYPE html>
+
 <html lang="zh-Hant">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>EMI 學生素養分層分析儀表板</title>
+
     <!-- 核心庫載入 -->
+
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
     <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+
     <script src="https://unpkg.com/recharts@2.12.0/umd/Recharts.js"></script>
+
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
+
     <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
+
         body { background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+
         .bg-stats-bar { height: 54px; border-radius: 27px; overflow: hidden; display: flex; align-items: center; background-color: #f3f4f6; border: 1px solid #e5e7eb; }
+
         .bg-stats-segment { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 1000; color: white; transition: width 1s ease-in-out; text-shadow: 0px 1px 3px rgba(0,0,0,0.3); }
+
         #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
+
     </style>
+
 </head>
+
 <body>
+
     <div id="loading-screen">
+
         <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
+
         <p class="mt-4 font-black text-gray-400 animate-pulse">數據引擎初始化中...</p>
+
     </div>
+
+
 
     <div id="root"></div>
 
+
+
     <script type="text/babel">
+
         const { 
+
             BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+
             Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+
             Cell, ComposedChart, Line, LabelList
+
         } = window.Recharts;
 
+
+
         // ==========================================
+
         // 🚀 數據源連結設定
+
         // ==========================================
+
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy12Shjgj-hZxrYZiQV8MDYzfe7ZkDD9z4c2UmEOZK_bSLfAv8ZRitdFZpAuvq4GnpQU_qj-RP3z_K/pub?gid=1366984866&single=true&output=csv"; 
 
+
+
         const SimpleIcon = ({ name, color = "#666", size = 20 }) => {
+
             const icons = {
+
                 users: `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`,
+
                 globe: `<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20"/><path d="M2 12h20"/><path d="M12 2a14.5 14.5 0 0 1 0 20"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/>`,
+
                 smile: `<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>`,
+
                 venusmars: `<path d="M12 2v10"/><path d="M12 12c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6z"/><path d="M12 18c-3.3 0-6 2.7-6 6v2h12v-2c0-3.3-2.7-6-6-6z"/>`,
+
                 target: `<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>`,
+
                 book: `<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-0.5-5"/><path d="M6.5 17.5c-1.38 0-2.5 1.12-2.5 2.5"/>`,
+
                 brain: `<path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.78-3.06 2.5 2.5 0 0 1-2.12-4.16 2.5 2.5 0 0 1-.14-4.78 2.5 2.5 0 0 1 2.5-3.94A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.78-3.06 2.5 2.5 0 0 0 2.12-4.16 2.5 2.5 0 0 0 .14-4.78 2.5 2.5 0 0 0-2.5-3.94A2.5 2.5 0 0 0 14.5 2Z"/>`,
+
                 zap: `<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>`,
+
                 star: `<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>`
+
             };
+
             return (
+
                 <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
+
                      dangerouslySetInnerHTML={{ __html: icons[name] || "" }} />
+
             );
+
         };
+
+
 
         const PREFERRED_ORDER = ['Overall (全校整體)', '工程學院', '電資學院', '管理學院', '應科學院', '設計學院', '人文學院', '產創學院', '通識中心'];
 
+
+
         function parseCSV(text) {
+
             const cleanText = text.replace(/^\uFEFF/, "");
+
             const lines = cleanText.split(/\r?\n/).filter(l => l.trim() !== "");
+
             if (lines.length < 2) return [];
+
             
+
             // 🚀 關鍵強化：標頭(Header)也進行 trim() 清理，避免空格導致失效
+
             const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+
             
+
             return lines.slice(1).map(line => {
+
                 const values = [];
+
                 let current = "";
+
                 let inQuotes = false;
+
                 for (let i = 0; i < line.length; i++) {
+
                     const char = line[i];
+
                     if (char === '"') inQuotes = !inQuotes;
+
                     else if (char === ',' && !inQuotes) {
+
                         values.push(current.trim());
+
                         current = "";
+
                     } else {
+
                         current += char;
+
                     }
+
                 }
+
                 values.push(current.trim());
+
                 let obj = {};
+
                 header.forEach((key, idx) => {
+
                     let val = values[idx] || "";
+
                     val = val.replace(/^"|"$/g, '').replace(/(?!^\d+)\,(?=\d+)/g, ''); 
+
                     obj[key] = val;
+
                 });
+
                 return obj;
+
             });
+
         }
 
+
+
         const RadarTick = (props) => {
+
             const { x, y, payload, textAnchor } = props;
+
             const words = (payload.value || "").split('&');
+
             return (
+
                 <g transform={`translate(${x},${y})`}>
+
                     <text x={0} y={0} textAnchor={textAnchor} fill="#334155" style={{ fontSize: '14px', fontWeight: '900' }}>
+
                         {words.map((word, i) => (
+
                             <tspan key={i} x={0} dy={i === 0 ? 0 : 18}>{word}{i === 0 && words.length > 1 ? '&' : ''}</tspan>
+
                         ))}
+
                     </text>
+
                 </g>
+
             );
+
         };
+
+
 
         const RenderRadarLabel = (props) => {
+
             const { x, y, value } = props;
+
             return <text x={x} y={y - 12} fill="#000000" textAnchor="middle" style={{ fontSize: '18px', fontWeight: '1000' }}>{value}</text>;
+
         };
 
+
+
         function App() {
+
             const fallbackData = [{ 學期: "114-1", 單位: "Overall (全校整體)", 人數: 3340, 海外意願人數: 2871, 信心增加人數: 2405, 女性人數: 1101, 男性人數: 2239, 第一次修EMI人數: 1365, 非第一次修EMI人數: 1975, 自我調節學習: 3.8, "學術英語&學科學習": 3.6, Bloom認知: 3.8, 課程參與: 3.7, 自我效能: 3.8, 教師講授: 44, 師生互動: 21, 生生互動: 16, 學生報告: 15, 其他: 14 }];
 
+
+
             const [allRows, setAllRows] = React.useState(fallbackData);
+
             const [selectedSemester, setSelectedSemester] = React.useState('114-1');
+
             const [selectedCollege, setSelectedCollege] = React.useState('Overall (全校整體)');
+
             const [loading, setLoading] = React.useState(true);
+
             const [dataStatus, setDataStatus] = React.useState('loading');
 
+
+
             React.useEffect(() => {
+
                 const fetchData = async () => {
+
                     try {
+
                         const fetchUrl = SHEET_CSV_URL + (SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+
                         const response = await fetch(fetchUrl, { cache: "no-store" });
+
                         if (!response.ok) throw new Error("Network error");
+
                         const text = await response.text();
+
                         const data = parseCSV(text);
+
                         
+
                         if (data && data.length > 0) {
+
                             setAllRows(data);
+
                             const firstSem = data[0].學期;
+
                             setSelectedSemester(firstSem);
+
                             const units = [...new Set(data.filter(r => r.學期 === firstSem).map(r => r.單位))];
+
                             const defCol = PREFERRED_ORDER.find(c => units.includes(c)) || units[0];
+
                             setSelectedCollege(defCol);
+
                             setDataStatus('cloud');
+
                         }
+
                     } catch (e) {
+
                         setDataStatus('error');
+
                     } finally {
+
                         setLoading(false);
+
                         const loader = document.getElementById('loading-screen');
+
                         if (loader) loader.style.display = 'none';
+
                     }
+
                 };
+
                 fetchData();
+
             }, []);
 
+
+
             // 🚀 當切換學期時，確保學院選單連動到該學期有的單位
+
             React.useEffect(() => {
+
                 if (allRows.length <= 1) return;
+
                 const validColleges = [...new Set(allRows.filter(r => r.學期 === selectedSemester).map(r => String(r.單位).trim()))];
+
                 if (!validColleges.includes(String(selectedCollege).trim())) {
+
                     const nextBest = PREFERRED_ORDER.find(c => validColleges.includes(c)) || validColleges[0];
+
                     if (nextBest) setSelectedCollege(nextBest);
+
                 }
+
             }, [selectedSemester, allRows]);
 
+
+
             const semesters = [...new Set(allRows.map(r => r.學期))].sort().reverse();
+
             const currentUnits = [...new Set(allRows.filter(r => r.學期 === selectedSemester).map(r => r.單位))];
+
             const sortedColleges = [
+
                 ...PREFERRED_ORDER.filter(name => currentUnits.includes(name)),
+
                 ...currentUnits.filter(name => name && !PREFERRED_ORDER.includes(name))
+
             ];
 
+
+
             const activeRaw = allRows.find(r => 
+
                 String(r.學期).trim() === String(selectedSemester).trim() && 
+
                 String(r.單位).trim() === String(selectedCollege).trim()
+
             ) || allRows.find(r => String(r.學期).trim() === String(selectedSemester).trim()) || allRows[0];
+
+
 
             const count = parseInt(activeRaw.人數 || 0);
 
+
+
             if (loading) return null;
 
+
+
             return (
+
                 <div className="max-w-7xl mx-auto p-4 md:p-8 fade-in">
+
                     <header className="flex flex-col md:flex-row justify-between items-center border-b-2 border-gray-100 pb-6 mb-8 gap-6 text-center md:text-left">
+
                         <div>
+
                             <h1 className="text-3xl font-black text-gray-800 tracking-tight">EMI 學生素養分層分析儀表板</h1>
+
                             <p className="text-gray-500 font-medium mt-1">
+
                                 {selectedSemester} 學期 | 當前視角: <span className="text-[#9BADC1] font-bold underline decoration-4 underline-offset-8">{selectedCollege}</span>
+
                             </p>
+
                             <div className="flex items-center gap-2 mt-2 justify-center md:justify-start text-[11px] font-bold">
+
                                 {dataStatus === 'cloud' ? <span className="text-green-600">● 雲端數據同步中</span> : <span className="text-amber-600">● 離線展示模式</span>}
+
                                 <span className="text-gray-300 mx-1">|</span>
+
                                 <p className="text-gray-400 italic">NTUST EMI HELP CENTER</p>
+
                             </div>
+
                         </div>
+
                         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+
                             <div className="flex flex-col gap-1">
+
                                 <label className="text-[12px] font-bold text-gray-400 uppercase tracking-widest text-center md:text-left">學期</label>
+
                                 <select 
+
                                     className="bg-white border-2 border-gray-200 rounded-xl px-4 py-2 font-black text-gray-700 outline-none text-xl shadow-sm cursor-pointer hover:border-[#9BADC1] transition-colors"
+
                                     value={selectedSemester}
+
                                     onChange={(e) => setSelectedSemester(e.target.value)}
+
                                 >
+
                                     {semesters.map(s => <option key={s} value={s}>{s}</option>)}
+
                                 </select>
+
                             </div>
+
                             <div className="flex flex-col gap-1 min-w-[240px]">
+
                                 <label className="text-[12px] font-bold text-gray-400 uppercase tracking-widest text-center md:text-left">數據單位</label>
+
                                 <select 
+
                                     className="w-full bg-white border-2 border-[#9BADC1] rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-[#9BADC1] outline-none font-black text-gray-700 text-xl transition-all cursor-pointer hover:bg-gray-50"
+
                                     value={selectedCollege}
+
                                     onChange={(e) => setSelectedCollege(e.target.value)}
+
                                 >
+
                                     {sortedColleges.map(name => <option key={name} value={name}>{name}
