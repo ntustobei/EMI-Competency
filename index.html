@@ -29,6 +29,9 @@
         .report-content li { margin-bottom: 0.75rem; padding-left: 1.25rem; position: relative; color: #475569; line-height: 1.6; }
         .report-content li::before { content: "•"; position: absolute; left: 0; color: #9BADC1; font-weight: bold; }
         .report-content strong { color: #1e293b; font-weight: 800; }
+
+        /* Question Mapping Styling */
+        .question-tag { font-family: monospace; font-weight: 800; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; margin-right: 8px; }
     </style>
 </head>
 <body>
@@ -47,9 +50,74 @@
         } = window.Recharts;
 
         // ==========================================
-        // 🚀 數據源連結設定與專家報告
+        // 🚀 全域配置與常量
         // ==========================================
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy12Shjgj-hZxrYZiQV8MDYzfe7ZkDD9z4c2UmEOZK_bSLfAv8ZRitdFZpAuvq4GnpQU_qj-RP3z_K/pub?gid=1366984866&single=true&output=csv"; 
+
+        const PREFERRED_ORDER = ['Overall (全校整體)', '工程學院', '電資學院', '管理學院', '應科學院', '設計學院', '人文學院', '產創學院', '通識中心'];
+
+        const QUESTION_MAPPING = [
+            {
+                category: "自我調節學習技能 (SRL)",
+                color: "#8697A8",
+                items: [
+                    { id: "SRL1", text: "I set specific goals for my learning." },
+                    { id: "SRL2", text: "I employed strategies (e.g. mind maps) to reach my learning goals." },
+                    { id: "SRL3", text: "I kept track of my learning progress." },
+                    { id: "SRL4", text: "I reflected on my learning difficulties." },
+                    { id: "SRL5", text: "I adjusted my study strategies based on my performance." }
+                ]
+            },
+            {
+                category: "認知學術語言能力 (CALP) 及 學科內容學習",
+                color: "#C49B9B",
+                items: [
+                    { id: "CALP1", text: "I was prepared to begin the EMI course where the subject content is delivered in English." },
+                    { id: "CALP2", text: "I was able to express basic concepts of subject content in English." },
+                    { id: "CALP3", text: "I was able to engage with academic discussions on subject content in English." },
+                    { id: "CALP4", text: "I was able to describe the relations between different concepts of subject content in English." },
+                    { id: "CALP5", text: "I was able to adapt my English language use to fit different communication contexts." },
+                    { id: "CALP6", text: "I was able to organize my arguments for presenting the subject content in English." }
+                ]
+            },
+            {
+                category: "認知能力 (Cognition 布魯姆認知層級)",
+                color: "#9F97B5",
+                items: [
+                    { id: "Cog1", text: "I was able to recall key facts and basic concepts from the course content related in English." },
+                    { id: "Cog2", text: "I was able to explain the concepts covered in the course." },
+                    { id: "Cog3", text: "I was able to apply learned concepts to solve problems." },
+                    { id: "Cog4", text: "I was able to draw connections among concepts or themes in the course content." },
+                    { id: "Cog5", text: "I was able to justify my opinions or decisions with reasons or evidence." },
+                    { id: "Cog6", text: "I was able to produce new ideas or products based on what I have learned." }
+                ]
+            },
+            {
+                category: "學習投入 (Engagement)",
+                color: "#E2B4BD",
+                items: [
+                    { id: "Eng1", text: "The topics we discussed in class made me curious and interested in learning more about them." },
+                    { id: "Eng2", text: "It was very interesting and engaging listening to the instructor talk about the main topics of this course." },
+                    { id: "Eng3", text: "After engaging with the course materials, I became more interested and eager to learn more about the topic." },
+                    { id: "Eng4", text: "I sometimes lost track of time in class because I was so involved in the topic." },
+                    { id: "Eng5", text: "When we did group discussion, I became very involved in them." },
+                    { id: "Eng6", text: "When we did tasks in class, I became involved in them." },
+                    { id: "Eng7", text: "I enjoyed discussing the topics of this course with my classmates." }
+                ]
+            },
+            {
+                category: "自我效能 (Self-Efficacy)",
+                color: "#8697A8",
+                items: [
+                    { id: "SE1", text: "I believe I had the ability to complete the tasks we did in class." },
+                    { id: "SE2", text: "I believe I had the ability to understand the spoken content delivered by the instructor." },
+                    { id: "SE3", text: "I believe my English skills were adequate to meet the academic language demands of this course." },
+                    { id: "SE4", text: "I believe I had the ability to understand the written and visual materials used in this course." },
+                    { id: "SE5", text: "I believe I had the ability to understand the course topics as well as most of my classmates." },
+                    { id: "SE6", text: "I believe I had the ability to explain key ideas from the course in my own words." }
+                ]
+            }
+        ];
 
         const EXPERT_REPORTS = {
             "Overall (全校整體)": {
@@ -90,6 +158,9 @@
             }
         };
 
+        // ==========================================
+        // 🛠️ 輔助函數
+        // ==========================================
         const SimpleIcon = ({ name, color = "#666", size = 20 }) => {
             const icons = {
                 users: `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`,
@@ -103,7 +174,8 @@
                 star: `<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>`,
                 chevron: `<path d="m6 9 6 6 6-6"/>`,
                 sparkles: `<path d="m12 3 1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>`,
-                alert: `<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>`
+                alert: `<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>`,
+                list: `<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>`
             };
             return (
                 <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
@@ -111,9 +183,7 @@
             );
         };
 
-        const PREFERRED_ORDER = ['Overall (全校整體)', '工程學院', '電資學院', '管理學院', '應科學院', '設計學院', '人文學院', '產創學院', '通識中心'];
-
-        function parseCSV(text) {
+        const parseCSV = (text) => {
             const cleanText = text.replace(/^\uFEFF/, "");
             const lines = cleanText.split(/\r?\n/).filter(l => l.trim() !== "");
             if (lines.length < 2) return [];
@@ -141,7 +211,7 @@
                 });
                 return obj;
             });
-        }
+        };
 
         const RadarTick = (props) => {
             const { x, y, payload, textAnchor } = props;
@@ -162,6 +232,9 @@
             return <text x={x} y={y - 12} fill="#000000" textAnchor="middle" style={{ fontSize: '18px', fontWeight: '1000' }}>{value}</text>;
         };
 
+        // ==========================================
+        // ⚛️ 主要 App 組件
+        // ==========================================
         function App() {
             const fallbackData = [{ 學期: "114-1", 單位: "Overall (全校整體)", 人數: 3340, 海外意願人數: 2871, 信心增加人數: 2405, 女性人數: 1101, 男性人數: 2239, 第一次修EMI人數: 1365, 非第一次修EMI人數: 1975, 自我調節學習: 3.8, "學術英語&學科學習": 3.6, Bloom認知: 3.8, 課程參與: 3.7, 自我效能: 3.8, 教師講授: 44, 師生互動: 21, 生生互動: 16, 學生報告: 15, 其他: 14 }];
 
@@ -208,7 +281,7 @@
                     const nextBest = PREFERRED_ORDER.find(c => validColleges.includes(c)) || validColleges[0];
                     if (nextBest) setSelectedCollege(nextBest);
                 }
-            }, [selectedSemester, allRows]);
+            }, [selectedSemester, allRows, selectedCollege]);
 
             const semesters = [...new Set(allRows.map(r => r.學期))].sort().reverse();
             const currentUnits = [...new Set(allRows.filter(r => r.學期 === selectedSemester).map(r => r.單位))];
@@ -228,8 +301,8 @@
             if (loading) return null;
 
             return (
-                <div className="max-w-7xl mx-auto p-4 md:p-8 fade-in">
-                    <header className="flex flex-col md:flex-row justify-between items-center border-b-2 border-gray-100 pb-6 mb-8 gap-6 text-center md:text-left">
+                <div className="max-w-7xl mx-auto p-4 md:p-8 fade-in text-center md:text-left">
+                    <header className="flex flex-col md:flex-row justify-between items-center border-b-2 border-gray-100 pb-6 mb-8 gap-6">
                         <div>
                             <h1 className="text-3xl font-black text-gray-800 tracking-tight">EMI 學生素養分層分析儀表板</h1>
                             <p className="text-gray-500 font-medium mt-1">
@@ -243,7 +316,7 @@
                         </div>
                         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
                             <div className="flex flex-col gap-1">
-                                <label className="text-[12px] font-bold text-gray-400 uppercase tracking-widest text-center md:text-left">學期</label>
+                                <label className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">學期</label>
                                 <select 
                                     className="bg-white border-2 border-gray-200 rounded-xl px-4 py-2 font-black text-gray-700 outline-none text-xl shadow-sm cursor-pointer hover:border-[#9BADC1] transition-colors"
                                     value={selectedSemester}
@@ -253,7 +326,7 @@
                                 </select>
                             </div>
                             <div className="flex flex-col gap-1 min-w-[240px]">
-                                <label className="text-[12px] font-bold text-gray-400 uppercase tracking-widest text-center md:text-left">數據單位</label>
+                                <label className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">數據單位</label>
                                 <select 
                                     className="w-full bg-white border-2 border-[#9BADC1] rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-[#9BADC1] outline-none font-black text-gray-700 text-xl transition-all cursor-pointer hover:bg-gray-50"
                                     value={selectedCollege}
@@ -269,7 +342,7 @@
                     </header>
 
                     {/* KPI 展示區 第一排 */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 text-center md:text-left">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         {[
                             { label: '有效問卷總數', val: count.toLocaleString(), icon: 'users', color: '#8697A8' },
                             { label: '海外讀書/工作意願', val: activeRaw.海外意願人數 || 0, icon: 'globe', color: '#C49B9B', sub: `占比: ${((parseInt(activeRaw.海外意願人數 || 0)/count)*100).toFixed(1)}%` },
@@ -311,7 +384,7 @@
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-10">
                         <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-                            <h3 className="text-2xl font-black text-gray-700 mb-8 border-l-8 border-[#9BADC1] pl-4 text-center md:text-left">學生背景資料分佈 (N={count})</h3>
+                            <h3 className="text-2xl font-black text-gray-700 mb-8 border-l-8 border-[#9BADC1] pl-4">學生背景資料分佈 (N={count})</h3>
                             <div className="space-y-12">
                                 {[
                                     { label: '生理性別 (女性/男性)', val: parseInt(activeRaw.女性人數 || 0), total: count, posLabel: '女性', negLabel: '男性' },
@@ -338,8 +411,8 @@
                         </div>
 
                         <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center">
-                            <h3 className="text-2xl font-black text-gray-700 mb-8 text-center">{selectedCollege} 素養評分雷達</h3>
-                            <div className="h-96 w-full">
+                            <h3 className="text-2xl font-black text-gray-700 mb-8">{selectedCollege} 素養評分雷達</h3>
+                            <div className="h-96 w-full text-center">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <RadarChart cx="50%" cy="50%" outerRadius="80%" data={[
                                         { subject: '自我調節學習', A: parseFloat(activeRaw.自我調節學習 || 0) },
@@ -374,20 +447,20 @@
                                 ]} layout="vertical" margin={{ left: 20, right: 100 }}>
                                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#eee" />
                                     <XAxis type="number" domain={[0, 60]} hide />
-                                    <YAxis dataKey="name" type="category" tick={{fontSize: 18, fontWeight: '1000', fill: '#334155'}} width={120} />
+                                    <YAxis dataKey="name" type="category" tick={{fontSize: 18, font_weight: '1000', fill: '#334155'}} width={120} />
                                     <Tooltip />
                                     <Bar dataKey="value" radius={[0, 20, 20, 0]} barSize={60}>
                                         {[0,1,2,3,4].map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={index === 0 ? '#9BADC1' : index % 2 === 0 ? '#B9B1D2' : '#E2B4BD'} />
                                         ))}
-                                        <LabelList dataKey="value" position="right" formatter={(v) => `${v}%`} style={{ fontSize: '24px', fontWeight: '1000', fill: '#000' }} />
+                                        <LabelList dataKey="value" position="right" formatter={(v) => `${v}%`} style={{ fontSize: '24px', font_weight: '1000', fill: '#000' }} />
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
 
-                    <div className="bg-white border rounded-3xl p-8 shadow-sm mb-10 text-center md:text-left">
+                    <div className="bg-white border rounded-3xl p-8 shadow-sm mb-10">
                         <h3 className="text-2xl font-black text-gray-700 mb-8 border-l-8 border-[#B9B1D2] pl-4 text-sm">30 項測量細項詳細平均分趨勢</h3>
                         <div className="h-80">
                             <ResponsiveContainer width="100%" height="100%">
@@ -405,6 +478,38 @@
                         </div>
                     </div>
 
+                    {/* 🚀 移動：30 項測量細項題項對照表 (現在位於 趨勢圖 之後，按鈕 之前) */}
+                    <div className="mt-8 mb-10 bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="p-2 bg-slate-100 rounded-lg">
+                                <SimpleIcon name="list" color="#64748b" size={24} />
+                            </div>
+                            <h3 className="text-2xl font-black text-gray-800">30 項測量細項：題項對照表</h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10 text-left">
+                            {QUESTION_MAPPING.map((cat, idx) => (
+                                <div key={idx} className="flex flex-col">
+                                    <h4 className="flex items-center gap-2 text-lg font-black text-gray-700 mb-4 pb-2 border-b-2" style={{ borderColor: cat.color }}>
+                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }}></div>
+                                        {cat.category}
+                                    </h4>
+                                    <ul className="space-y-3">
+                                        {cat.items.map((item, i) => (
+                                            <li key={i} className="flex items-start text-sm text-gray-600 leading-relaxed">
+                                                <span className="question-tag shrink-0">{item.id}</span>
+                                                <span className="font-medium">{item.text}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-10 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center">
+                            <p className="text-xs font-bold text-gray-400 italic">Reference guide for interpreting the detailed average score trends across 30 metrics.</p>
+                        </div>
+                    </div>
+
                     <div className="mt-16 text-center">
                         <a href="https://sites.google.com/view/ntustemihelp/emi-%E6%95%99%E5%AD%B8%E7%AD%96%E7%95%A5" 
                            target="_blank" rel="noopener noreferrer"
@@ -414,7 +519,7 @@
                         </a>
                     </div>
 
-                    {/* 🚀 插入區塊：AI 智能診斷報告折疊區 */}
+                    {/* 🚀 AI 智能診斷報告折疊區 */}
                     <div className="mt-8 mb-12 overflow-hidden rounded-3xl border-2 border-dashed border-[#9BADC1] bg-white shadow-sm transition-all duration-300">
                         <button 
                             onClick={() => setShowReport(!showReport)}
