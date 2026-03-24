@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EMI 學生素養分層分析儀表板 (AI 增強版)</title>
+    <title>EMI 學生素養分層分析儀表板</title>
     <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -11,6 +11,7 @@
     <script src="https://unpkg.com/recharts@2.12.0/umd/Recharts.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body { background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -18,12 +19,6 @@
         .bg-stats-bar { height: 54px; border-radius: 27px; overflow: hidden; display: flex; align-items: center; background-color: #f3f4f6; border: 1px solid #e5e7eb; }
         .bg-stats-segment { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 1000; color: white; transition: width 1s ease-in-out; text-shadow: 0px 1px 3px rgba(0,0,0,0.3); }
         #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
-        
-        /* AI Result Styling */
-        .ai-content h4 { font-weight: 800; color: #1e293b; margin-top: 1rem; margin-bottom: 0.5rem; border-left: 4px solid #9BADC1; padding-left: 0.75rem; }
-        .ai-content p { color: #475569; line-height: 1.6; margin-bottom: 0.75rem; }
-        .ai-content ul { list-style-type: disc; padding-left: 1.5rem; color: #475569; margin-bottom: 1rem; }
-        .ai-content li { margin-bottom: 0.5rem; }
     </style>
 </head>
 <body>
@@ -42,10 +37,9 @@
         } = window.Recharts;
 
         // ==========================================
-        // 🚀 配置與 API 設定
+        // 🚀 數據源連結設定
         // ==========================================
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy12Shjgj-hZxrYZiQV8MDYzfe7ZkDD9z4c2UmEOZK_bSLfAv8ZRitdFZpAuvq4GnpQU_qj-RP3z_K/pub?gid=1366984866&single=true&output=csv"; 
-        const apiKey = ""; // 由系統環境提供
 
         const SimpleIcon = ({ name, color = "#666", size = 20 }) => {
             const icons = {
@@ -57,9 +51,7 @@
                 book: `<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-0.5-5"/><path d="M6.5 17.5c-1.38 0-2.5 1.12-2.5 2.5"/>`,
                 brain: `<path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.78-3.06 2.5 2.5 0 0 1-2.12-4.16 2.5 2.5 0 0 1-.14-4.78 2.5 2.5 0 0 1 2.5-3.94A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.78-3.06 2.5 2.5 0 0 0 2.12-4.16 2.5 2.5 0 0 0 .14-4.78 2.5 2.5 0 0 0-2.5-3.94A2.5 2.5 0 0 0 14.5 2Z"/>`,
                 zap: `<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>`,
-                star: `<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>`,
-                sparkles: `<path d="m12 3 1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>`,
-                alert: `<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>`
+                star: `<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>`
             };
             return (
                 <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
@@ -73,7 +65,10 @@
             const cleanText = text.replace(/^\uFEFF/, "");
             const lines = cleanText.split(/\r?\n/).filter(l => l.trim() !== "");
             if (lines.length < 2) return [];
+            
+            // 🚀 關鍵強化：標頭(Header)也進行 trim() 清理，避免空格導致失效
             const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            
             return lines.slice(1).map(line => {
                 const values = [];
                 let current = "";
@@ -84,7 +79,9 @@
                     else if (char === ',' && !inQuotes) {
                         values.push(current.trim());
                         current = "";
-                    } else current += char;
+                    } else {
+                        current += char;
+                    }
                 }
                 values.push(current.trim());
                 let obj = {};
@@ -114,144 +111,6 @@
         const RenderRadarLabel = (props) => {
             const { x, y, value } = props;
             return <text x={x} y={y - 12} fill="#000000" textAnchor="middle" style={{ fontSize: '18px', fontWeight: '1000' }}>{value}</text>;
-        };
-
-        // ==========================================
-        // 🤖 AI 智能洞察組件
-        // ==========================================
-        const AIInsights = ({ data, semester, college }) => {
-            const [insight, setInsight] = React.useState("");
-            const [isGenerating, setIsGenerating] = React.useState(false);
-            const [error, setError] = React.useState(null);
-
-            const generateAIAnalysis = async () => {
-                setIsGenerating(true);
-                setError(null);
-                setInsight("");
-
-                const systemPrompt = "你是一位 EMI (以英語為教學語言) 高等教育專家與數據分析師。請根據提供的數據，為儀表板使用者提供簡短、專業且具啟發性的傳統中文數據洞察摘要。請包含：1. 現況總結 2. 一個關鍵優勢 3. 一個待改進點 4. 具體的教學策略建議。請使用 Markdown 格式。";
-                
-                const userQuery = `
-                    分析數據如下：
-                    學期：${semester}
-                    學院/單位：${college}
-                    有效樣本數：${data.人數}
-                    五大素養指標 (滿分5分)：
-                    - 自我調節學習: ${data.自我調節學習}
-                    - 學術英語與學科學習: ${data['學術英語&學科學習']}
-                    - Bloom認知: ${data.Bloom認知}
-                    - 課程參與: ${data.課程參與}
-                    - 自我效能: ${data.自我效能}
-                    
-                    課堂互動占比：
-                    - 教師講授: ${data.教師講授}%
-                    - 師生互動: ${data.師生互動}%
-                    - 生生互動: ${data.生生互動}%
-                    - 學生報告: ${data.學生報告}%
-                    
-                    學生背景：
-                    - 第一次修EMI比例: ${((parseInt(data.第一次修EMI人數)/parseInt(data.人數))*100).toFixed(1)}%
-                    - 海外意願比例: ${((parseInt(data.海外意願人數)/parseInt(data.人數))*100).toFixed(1)}%
-                `;
-
-                const fetchWithRetry = async (retries = 5, backoff = 1000) => {
-                    try {
-                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                contents: [{ parts: [{ text: userQuery }] }],
-                                systemInstruction: { parts: [{ text: systemPrompt }] }
-                            })
-                        });
-                        
-                        if (!response.ok) throw new Error(`API Error: ${response.status}`);
-                        const result = await response.json();
-                        return result.candidates?.[0]?.content?.parts?.[0]?.text;
-                    } catch (err) {
-                        if (retries > 0) {
-                            await new Promise(r => setTimeout(r, backoff));
-                            return fetchWithRetry(retries - 1, backoff * 2);
-                        }
-                        throw err;
-                    }
-                };
-
-                try {
-                    const text = await fetchWithRetry();
-                    setInsight(text);
-                } catch (err) {
-                    setError("暫時無法生成 AI 洞察，請稍後再試。");
-                } finally {
-                    setIsGenerating(false);
-                }
-            };
-
-            // 當切換數據時清空舊的分析內容，讓使用者主動觸發
-            React.useEffect(() => {
-                setInsight("");
-                setError(null);
-            }, [semester, college]);
-
-            return (
-                <div className="bg-white rounded-3xl p-6 shadow-sm border-2 border-dashed border-[#9BADC1] mb-8 relative overflow-hidden transition-all">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-blue-50 rounded-2xl">
-                                <SimpleIcon name="sparkles" color="#3b82f6" size={28} />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-black text-gray-800">AI 數據智能診斷</h3>
-                                <p className="text-sm text-gray-400 font-medium">基於當前篩選數據進行即時教學成效分析</p>
-                            </div>
-                        </div>
-                        <button 
-                            onClick={generateAIAnalysis}
-                            disabled={isGenerating}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black transition-all shadow-sm ${
-                                isGenerating ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#9BADC1] text-white hover:bg-[#8697A8] active:scale-95'
-                            }`}
-                        >
-                            {isGenerating ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    <span>思考中...</span>
-                                </div>
-                            ) : (
-                                <>
-                                    <SimpleIcon name="brain" color="white" size={20} />
-                                    <span>生成智能分析報告</span>
-                                </>
-                            )}
-                        </button>
-                    </div>
-
-                    {error && (
-                        <div className="mt-4 p-4 bg-red-50 text-red-600 rounded-xl flex items-center gap-3 text-sm font-bold animate-shake">
-                            <SimpleIcon name="alert" color="#dc2626" size={18} />
-                            {error}
-                        </div>
-                    )}
-
-                    {insight && (
-                        <div className="mt-6 p-6 bg-slate-50 rounded-2xl ai-content fade-in border border-slate-100">
-                            <div className="flex items-center gap-2 mb-4">
-                                <span className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-widest">Live Insight</span>
-                            </div>
-                            <div className="text-gray-700 whitespace-pre-wrap">
-                                {insight.split('\n').map((line, i) => {
-                                    if (line.startsWith('###') || line.startsWith('**')) {
-                                        return <h4 key={i}>{line.replace(/#|\*/g, '')}</h4>;
-                                    } else if (line.trim().startsWith('-')) {
-                                        return <li key={i} className="ml-4">{line.replace('-', '').trim()}</li>;
-                                    }
-                                    return <p key={i}>{line}</p>;
-                                })}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
         };
 
         function App() {
@@ -292,6 +151,7 @@
                 fetchData();
             }, []);
 
+            // 🚀 當切換學期時，確保學院選單連動到該學期有的單位
             React.useEffect(() => {
                 if (allRows.length <= 1) return;
                 const validColleges = [...new Set(allRows.filter(r => r.學期 === selectedSemester).map(r => String(r.單位).trim()))];
@@ -349,170 +209,4 @@
                                     value={selectedCollege}
                                     onChange={(e) => setSelectedCollege(e.target.value)}
                                 >
-                                    {sortedColleges.map(name => <option key={name} value={name}>{name}</option>)}
-                                </select>
-                            </div>
-                        </div>
-                    </header>
-
-                    {/* KPI 展示區 第一排 */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 text-center md:text-left">
-                        {[
-                            { label: '有效問卷總數', val: count.toLocaleString(), icon: 'users', color: '#8697A8' },
-                            { label: '海外讀書/工作意願', val: activeRaw.海外意願人數 || 0, icon: 'globe', color: '#C49B9B', sub: `占比: ${((parseInt(activeRaw.海外意願人數 || 0)/count)*100).toFixed(1)}%` },
-                            { label: 'EMI 增加出國信心', val: activeRaw.信心增加人數 || 0, icon: 'smile', color: '#9F97B5', sub: `占比: ${((parseInt(activeRaw.信心增加人數 || 0)/count)*100).toFixed(1)}%` },
-                            { label: '性別分布 (女/男)', val: `${activeRaw.女性人數 || 0} / ${activeRaw.男性人數 || 0}`, icon: 'venusmars', color: '#64748b' }
-                        ].map((kpi, idx) => (
-                            <div key={idx} className="bg-white border rounded-2xl p-5 shadow-sm border-t-4" style={{ borderTopColor: kpi.color }}>
-                                <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
-                                    <SimpleIcon name={kpi.icon} color={kpi.color} />
-                                    <span className="text-[14px] font-black text-gray-500 uppercase tracking-tight leading-tight">{kpi.label}</span>
-                                </div>
-                                <p className="text-3xl font-black text-gray-800 tracking-tighter">{kpi.val}</p>
-                                {kpi.sub && <p className="text-[12px] font-bold text-gray-400 mt-1">{kpi.sub}</p>}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* AI 智能診斷組件插入位置 */}
-                    <AIInsights data={activeRaw} semester={selectedSemester} college={selectedCollege} />
-
-                    {/* KPI 展示區 第二排 */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10 text-center">
-                        {[
-                            { label: '自我調節學習', val: activeRaw.自我調節學習, icon: 'target', color: '#8697A8' },
-                            { label: '學術英語&學科學習', val: activeRaw['學術英語&學科學習'], icon: 'book', color: '#C49B9B' },
-                            { label: 'Bloom認知', val: activeRaw.Bloom認知, icon: 'brain', color: '#9F97B5' },
-                            { label: '課程參與', val: activeRaw.課程參與, icon: 'zap', color: '#C49B9B' },
-                            { label: '自我效能', val: activeRaw.自我效能, icon: 'star', color: '#8697A8' }
-                        ].map((kpi, idx) => (
-                            <div key={idx} className="border rounded-xl p-5 shadow-lg transition-transform hover:scale-105" style={{ backgroundColor: kpi.color }}>
-                                <div className="flex items-center justify-center gap-2 mb-2">
-                                    <SimpleIcon name={kpi.icon} color="white" size={22} />
-                                    <span className="text-[15px] font-black text-white opacity-95 uppercase leading-tight">{kpi.label}</span>
-                                </div>
-                                <p className="text-5xl font-black text-white">{kpi.val}</p>
-                                <div className="w-full bg-white bg-opacity-20 h-3 mt-3 rounded-full overflow-hidden">
-                                    <div className="h-full bg-white opacity-60" style={{ width: `${(parseFloat(kpi.val || 0)/5)*100}%` }}></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-10">
-                        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-                            <h3 className="text-2xl font-black text-gray-700 mb-8 border-l-8 border-[#9BADC1] pl-4 text-center md:text-left">學生背景資料分佈 (N={count})</h3>
-                            <div className="space-y-12">
-                                {[
-                                    { label: '生理性別 (女性/男性)', val: parseInt(activeRaw.女性人數 || 0), total: count, posLabel: '女性', negLabel: '男性' },
-                                    { label: '這是第一次修 EMI (是/否)', val: parseInt(activeRaw.第一次修EMI人數 || 0), total: count, posLabel: '是', negLabel: '否' },
-                                    { label: 'EMI 增加出國信心 (是/否)', val: parseInt(activeRaw.信心增加人數 || 0), total: count, posLabel: '是', negLabel: '否' },
-                                    { label: '有意願海外讀書工作 (是/否)', val: parseInt(activeRaw.海外意願人數 || 0), total: count, posLabel: '是', negLabel: '否' }
-                                ].map((item, i) => {
-                                    const pct = item.total > 0 ? (item.val / item.total) * 100 : 0;
-                                    return (
-                                        <div key={i}>
-                                            <p className="text-lg font-black text-gray-600 mb-3">{item.label}</p>
-                                            <div className="bg-stats-bar shadow-inner">
-                                                <div className="bg-stats-segment" style={{ width: `${pct}%`, backgroundColor: '#9BADC1' }}>{item.val}</div>
-                                                <div className="bg-stats-segment" style={{ width: `${100 - pct}%`, backgroundColor: '#cbd5e1', color: '#1e293b' }}>{item.total - item.val}</div>
-                                            </div>
-                                            <div className="flex justify-between text-sm text-gray-400 mt-2 font-black italic text-[14px]">
-                                                <span>{item.posLabel}</span>
-                                                <span>{item.negLabel}</span>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center">
-                            <h3 className="text-2xl font-black text-gray-700 mb-8 text-center">{selectedCollege} 素養評分雷達</h3>
-                            <div className="h-96 w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={[
-                                        { subject: '自我調節學習', A: parseFloat(activeRaw.自我調節學習 || 0) },
-                                        { subject: '學術英語&學科學習', A: parseFloat(activeRaw['學術英語&學科學習'] || 0) },
-                                        { subject: 'Bloom認知', A: parseFloat(activeRaw.Bloom認知 || 0) },
-                                        { subject: '課程參與', A: parseFloat(activeRaw.課程參與 || 0) },
-                                        { subject: '自我效能', A: parseFloat(activeRaw.自我效能 || 0) }
-                                    ]}>
-                                        <PolarGrid stroke="#cbd5e1" strokeWidth={1} />
-                                        <PolarAngleAxis dataKey="subject" tick={<RadarTick />} />
-                                        <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
-                                        <Radar name={selectedCollege} dataKey="A" stroke="#9BADC1" fill="#9BADC1" fillOpacity={0.6}>
-                                            <LabelList dataKey="A" content={RenderRadarLabel} />
-                                        </Radar>
-                                        <Tooltip />
-                                    </RadarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-10 rounded-3xl shadow-sm border border-gray-100 mb-10 text-center">
-                        <h3 className="text-3xl font-black text-gray-700 mb-12 uppercase tracking-widest">EMI 課堂教學活動占比分布 (%)</h3>
-                        <div className="h-96">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={[
-                                    { name: '教師講授', value: parseInt(activeRaw.教師講授 || 0) },
-                                    { name: '師生互動', value: parseInt(activeRaw.師生互動 || 0) },
-                                    { name: '生生互動', value: parseInt(activeRaw.生生互動 || 0) },
-                                    { name: '學生報告', value: parseInt(activeRaw.學生報告 || 0) },
-                                    { name: '其他', value: parseInt(activeRaw.其他 || 0) }
-                                ]} layout="vertical" margin={{ left: 20, right: 100 }}>
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#eee" />
-                                    <XAxis type="number" domain={[0, 60]} hide />
-                                    <YAxis dataKey="name" type="category" tick={{fontSize: 18, fontWeight: '1000', fill: '#334155'}} width={120} />
-                                    <Tooltip />
-                                    <Bar dataKey="value" radius={[0, 20, 20, 0]} barSize={60}>
-                                        {[0,1,2,3,4].map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={index === 0 ? '#9BADC1' : index % 2 === 0 ? '#B9B1D2' : '#E2B4BD'} />
-                                        ))}
-                                        <LabelList dataKey="value" position="right" formatter={(v) => `${v}%`} style={{ fontSize: '24px', fontWeight: '1000', fill: '#000' }} />
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    <div className="bg-white border rounded-3xl p-8 shadow-sm mb-10 text-center md:text-left">
-                        <h3 className="text-2xl font-black text-gray-700 mb-8 border-l-8 border-[#B9B1D2] pl-4">30 項測量細項詳細平均分趨勢</h3>
-                        <div className="h-80">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={Object.keys(activeRaw)
-                                    .filter(k => /^(SRL|CALP|Cog|Eng|SE)\d+$/.test(k))
-                                    .map(k => ({ name: k, score: parseFloat(activeRaw[k]) }))}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: '900' }} interval={0} />
-                                    <YAxis domain={[0, 5]} tick={{fontSize: 14, fontWeight: '900'}} />
-                                    <Tooltip cursor={{fill: 'transparent'}} />
-                                    <Bar dataKey="score" fill="#E2B4BD" barSize={16} radius={[4, 4, 0, 0]} opacity={0.8} />
-                                    <Line type="monotone" dataKey="score" stroke="#B9B1D2" dot={{ r: 4, fill: '#B9B1D2' }} strokeWidth={4} />
-                                </ComposedChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    <div className="mt-16 text-center">
-                        <a href="https://sites.google.com/view/ntustemihelp/emi-%E6%95%99%E5%AD%B8%E7%AD%96%E7%95%A5" 
-                           target="_blank" rel="noopener noreferrer"
-                           className="inline-flex items-center gap-3 px-10 py-5 bg-[#8697A8] text-white rounded-full font-black text-2xl hover:bg-[#6e7d8c] transition-all shadow-md hover:shadow-2xl transform hover:-translate-y-1">
-                            <SimpleIcon name="globe" color="white" size={28} />
-                            前往：EMI 教學策略推薦 (教學支援網)
-                        </a>
-                    </div>
-
-                    <footer className="mt-12 pt-8 border-t-4 border-gray-100 text-center text-xs font-black text-gray-300 uppercase tracking-[0.6em]">
-                        {selectedSemester} | {selectedCollege} | FACILITATED BY NTUST EMI HELP CENTER
-                    </footer>
-                </div>
-            );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+                                    {sortedColleges.map(name => <option key={name} value={name}>{name}
