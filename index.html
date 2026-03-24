@@ -19,6 +19,16 @@
         .bg-stats-bar { height: 54px; border-radius: 27px; overflow: hidden; display: flex; align-items: center; background-color: #f3f4f6; border: 1px solid #e5e7eb; }
         .bg-stats-segment { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 1000; color: white; transition: width 1s ease-in-out; text-shadow: 0px 1px 3px rgba(0,0,0,0.3); }
         #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
+        
+        /* AI Report Styling */
+        .report-content h2 { font-size: 1.5rem; font-weight: 900; color: #1e293b; margin-bottom: 1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
+        .report-content h3 { font-size: 1.1rem; font-weight: 800; color: #334155; margin-top: 1.5rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+        .report-content h3::before { content: ""; display: inline-block; width: 4px; height: 18px; background: #9BADC1; border-radius: 2px; }
+        .report-content p { color: #475569; line-height: 1.8; margin-bottom: 1rem; }
+        .report-content ul { margin-bottom: 1rem; }
+        .report-content li { margin-bottom: 0.75rem; padding-left: 1.25rem; position: relative; color: #475569; line-height: 1.6; }
+        .report-content li::before { content: "•"; position: absolute; left: 0; color: #9BADC1; font-weight: bold; }
+        .report-content strong { color: #1e293b; font-weight: 800; }
     </style>
 </head>
 <body>
@@ -37,21 +47,63 @@
         } = window.Recharts;
 
         // ==========================================
-        // 🚀 數據源連結設定
+        // 🚀 數據源連結設定與專家報告
         // ==========================================
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy12Shjgj-hZxrYZiQV8MDYzfe7ZkDD9z4c2UmEOZK_bSLfAv8ZRitdFZpAuvq4GnpQU_qj-RP3z_K/pub?gid=1366984866&single=true&output=csv"; 
+
+        const EXPERT_REPORTS = {
+            "Overall (全校整體)": {
+                title: "114-1 學期 全校 EMI 教學數據洞察報告",
+                content: `<h3>1. 現況總結：穩健發展中的全球接軌願景</h3><p>目前全校 EMI 學習成效表現平穩，五大素養指標平均落在 3.6 - 3.8 之間。高達 86.0% 的學生具備海外學習意願，顯示校園內正處於大規模的「新手轉型期」，教學現場面臨語言門檻與學科理解的雙重挑戰。</p><h3>2. 關鍵優勢：強大的國際移動力動機</h3><p>86% 的海外意願比例是推動 EMI 政策轉型最強大的槓桿。當學生將其視為通往國際舞台的「預演」，其自我效能與自我調節展現出正向韌性。</p><h3>3. 待改進點：學術英語與學科結合的銜接落差</h3><p>「學術英語與學科學習」指標（3.6）相對較低，且課堂仍有 44% 為教師講授。對初學者而言，過高比例的講授可能導致「語言超載」。</p><h3>4. 具體教學策略建議</h3><ul><li><strong>優化互動比例：</strong>將教師講授比例降至 35% 以下，轉化為引導式互動。</li><li><strong>運用分段式教學：</strong>將 50 分鐘講授切分為 15 分鐘輸入與 10 分鐘討論。</li></ul>`
+            },
+            "工程學院": {
+                title: "114-1 學期 工程學院 EMI 教學洞察分析報告",
+                content: `<h3>1. 現況總結</h3><p>工程學院展現出「高動機、穩健認知、語言過渡期」特徵。學生在自我效能與 Bloom 認知表現穩定（皆為 3.8），且具備極強的國際移動意願（87.7%）。</p><h3>2. 關鍵優勢：強烈的國際化導向與學習自信</h3><p>87.7% 的學生表達海外意願，這是推動 EMI 課程的最佳施力點。顯示學生即使在全英環境下，對掌握專業知識仍具高度信心。</p><h3>3. 待改進點：學術英語與專業知識的深度融合</h3><p>學術英語銜接指標為五大素養最低（3.6）。維持近五成（47%）的單向講授可能導致新手產生學習斷層。</p><h3>4. 教學建議</h3><ul><li>實施支架式教學：加入視覺化教具與術語對照表。</li><li>優化生生互動：設計工程案例小組討論，提升實戰經驗。</li></ul>`
+            },
+            "電資學院": {
+                title: "114-1 學期 電資學院 EMI 教學數據洞察報告",
+                content: `<h3>1. 現況總結</h3><p>呈現「高學習動機、高自主性，但語言負荷感重」特徵。52.2% 學生是首次修習 EMI。教學型態仍以教師講授為主（49%）。</p><h3>2. 關鍵優勢：強大的自主管理能力</h3><p>自我調節學習 (3.8) 為五大素養之冠，顯示學生具備自行尋求資源解決學理問題的潛力。</p><h3>3. 待改進點：學術英語轉換的認知負荷過載</h3><p>學科與英語整合指標最低（3.3），暗示專業學科遇上全英教學時產生了認知干擾。</p><h3>4. 教學建議</h3><ul><li>實施關鍵詞雲與語言支架：提供週專業術語對照表。</li><li>強化同儕教導：利用高自主特質，增加生生互動。</li></ul>`
+            },
+            "管理學院": {
+                title: "114-1 學期 管理學院 EMI 教學洞察摘要",
+                content: `<h3>1. 現況總結</h3><p>呈現「高學習效能、高國際意願」特徵。學生在認知理解與自我效能感表現優異（均達 4.0/5.0），動機強烈。</p><h3>2. 關鍵優勢：高自我效能與深層認知參與</h3><p>Bloom 認知指標 (4.0) 與自我效能 (4.0) 表現最突出，適合推動強調個案分析的高階思維學習。</p><h3>3. 待改進點：學術英語轉換與口頭參與之缺口</h3><p>學術英語與課程參與得分最低（3.8），學生在運用英語進行即時專業討論時存在心理門檻。</p><h3>4. 教學建議</h3><ul><li>實施鷹架式互動：提供討論模板與專業句型包。</li><li>連結國際職涯情境：將課堂參與轉化為國際職場模擬練習。</li></ul>`
+            },
+            "應科學院": {
+                title: "114-1 應科學院 EMI 教學數據洞察",
+                content: `<h3>1. 現況總結</h3><p>呈現「高互動性」特徵。非講授式互動總計超過 70%，反映出課程設計高度強調學生參與。</p><h3>2. 關鍵優勢：強烈的國際化動機</h3><p>高達 81.7% 的學生具備海外學習或實習意願。這是將 EMI 課程視為接軌國際跳板的強大驅動力。</p><h3>3. 待改進點：初次修課者的學術支持</h3><p>46.3% 的學生是第一次修習，對於如何有效使用英語進行深度專業學習，仍需更系統化的引導。</p><h3>4. 教學建議</h3><ul><li>語言鷹架：提供學術表達句型包。</li><li>同儕引導：安排經驗者與初次修課者混合編組。</li></ul>`
+            },
+            "設計學院": {
+                title: "114-1 學期 設計學院 EMI 教學洞察摘要",
+                content: `<h3>1. 現況總結</h3><p>展現強大的認知處理能力與高度國際移動動機。非講授比例高達 66%，呈現積極的教學環境。</p><h3>2. 關鍵優勢：高階認知整合</h3><p>Bloom 認知表現 (3.9) 突出，顯示即使在全英環境下，仍能進行複雜的設計思考與創意批判。</p><h3>3. 待改進點：新手轉型期焦慮</h3><p>42.1% 為首次修讀，其對英語能力的焦慮可能會抑制設計專業上的信心釋放。</p><h3>4. 教學建議</h3><ul><li>強化視覺支架：增加圖表、模型與關鍵字清單。</li><li>優化設計評論：設計更多小組 Peer Review 環節。</li></ul>`
+            },
+            "人文學院": {
+                title: "114-1 人文學院 EMI 數據洞察摘要",
+                content: `<h3>1. 現況總結</h3><p>展現高度穩定性與參與度。認知層次表現優異（4.0），且具極強國際移動意願（93.6%）。</p><h3>2. 關鍵優勢：均衡的參與生態</h3><p>課堂講授僅佔 31%，師生、生生互動佔比極高，顯示教師能有效運用 EMI 策略激發學生開口。</p><h3>3. 待改進點：自我調節學習 (SRL)</h3><p>SRL 指標 (3.8) 相較其他指標略低，學生在預習、複習等自主管理方面可能感到吃力。</p><h3>4. 教學建議</h3><ul><li>整合全球視野：在教材中刻意加入國際期刊摘要。</li><li>提供自主學習導航：提供每週 EMI Study Guide。</li></ul>`
+            },
+            "產創學院": {
+                title: "114-1 產創學院 EMI 教學洞察分析",
+                content: `<h3>1. 現況總結</h3><p>學生展現出極強的實務應用導向，對提升國際競爭力深具信心。但教學仍偏向單向傳遞。</p><h3>2. 關鍵優勢：海外工作意願極高</h3><p>目標明確，利於將語言學習與未來職涯利基掛鉤，強化學習意義感。</p><h3>3. 教學建議</h3><ul><li>導入產業案例研究：優化生生互動佔比。</li><li>模擬技術會議：將語言學習融入實戰場景。</li></ul>`
+            },
+            "通識中心": {
+                title: "114-1 學期 通識中心 EMI 數據洞察摘要",
+                content: `<h3>1. 現況總結</h3><p>展現高度學生自信與活潑互動結構。自我效能最高（4.1），非講授佔比超過 60%。</p><h3>2. 關鍵優勢：心理安全感</h3><p>互動平衡成功降低了語言焦慮，通識環境成為實踐英語的最佳空間。</p><h3>3. 待改進點：參與深度落差</h3><p>30.2% 為首次修讀，部分學生在缺乏具體引導時仍無法有效掌控學習進度。</p><h3>4. 教學建議</h3><ul><li>連結國際情境：模擬跨文化提案等任務。</li><li>提供討論句型：協助學生從「敢說」進階到「說得深」。</li></ul>`
+            }
+        };
 
         const SimpleIcon = ({ name, color = "#666", size = 20 }) => {
             const icons = {
                 users: `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`,
                 globe: `<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20"/><path d="M2 12h20"/><path d="M12 2a14.5 14.5 0 0 1 0 20"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/>`,
                 smile: `<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>`,
-                venusmars: `<path d="M12 2v10"/><path d="M12 12c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6z"/><path d="M12 18c-3.3 0-6 2.7-6 6v2h12v-2c0-3.3-2.7-6-6-6z"/>`,
+                venusmars: `<path d="M12 2v10"/><path d="M12 12c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6z"/><path d="M12 18c-3.3 0-6-2.7-6 6v2h12v-2c0-3.3-2.7-6-6-6z"/>`,
                 target: `<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>`,
                 book: `<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-0.5-5"/><path d="M6.5 17.5c-1.38 0-2.5 1.12-2.5 2.5"/>`,
                 brain: `<path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.78-3.06 2.5 2.5 0 0 1-2.12-4.16 2.5 2.5 0 0 1-.14-4.78 2.5 2.5 0 0 1 2.5-3.94A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.78-3.06 2.5 2.5 0 0 0 2.12-4.16 2.5 2.5 0 0 0 .14-4.78 2.5 2.5 0 0 0-2.5-3.94A2.5 2.5 0 0 0 14.5 2Z"/>`,
                 zap: `<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>`,
-                star: `<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>`
+                star: `<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>`,
+                chevron: `<path d="m6 9 6 6 6-6"/>`,
+                sparkles: `<path d="m12 3 1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>`,
+                alert: `<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>`
             };
             return (
                 <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
@@ -65,10 +117,7 @@
             const cleanText = text.replace(/^\uFEFF/, "");
             const lines = cleanText.split(/\r?\n/).filter(l => l.trim() !== "");
             if (lines.length < 2) return [];
-            
-            // 🚀 關鍵強化：標頭(Header)也進行 trim() 清理，避免空格導致失效
             const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-            
             return lines.slice(1).map(line => {
                 const values = [];
                 let current = "";
@@ -121,6 +170,7 @@
             const [selectedCollege, setSelectedCollege] = React.useState('Overall (全校整體)');
             const [loading, setLoading] = React.useState(true);
             const [dataStatus, setDataStatus] = React.useState('loading');
+            const [showReport, setShowReport] = React.useState(false);
 
             React.useEffect(() => {
                 const fetchData = async () => {
@@ -151,7 +201,6 @@
                 fetchData();
             }, []);
 
-            // 🚀 當切換學期時，確保學院選單連動到該學期有的單位
             React.useEffect(() => {
                 if (allRows.length <= 1) return;
                 const validColleges = [...new Set(allRows.filter(r => r.學期 === selectedSemester).map(r => String(r.單位).trim()))];
@@ -174,6 +223,7 @@
             ) || allRows.find(r => String(r.學期).trim() === String(selectedSemester).trim()) || allRows[0];
 
             const count = parseInt(activeRaw.人數 || 0);
+            const reportData = EXPERT_REPORTS[selectedCollege] || EXPERT_REPORTS["Overall (全校整體)"];
 
             if (loading) return null;
 
@@ -188,7 +238,7 @@
                             <div className="flex items-center gap-2 mt-2 justify-center md:justify-start text-[11px] font-bold">
                                 {dataStatus === 'cloud' ? <span className="text-green-600">● 雲端數據同步中</span> : <span className="text-amber-600">● 離線展示模式</span>}
                                 <span className="text-gray-300 mx-1">|</span>
-                                <p className="text-gray-400 italic">NTUST EMI HELP CENTER</p>
+                                <p className="text-gray-400 italic">NTUST Office of Bilingual Education Initiatives</p>
                             </div>
                         </div>
                         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
@@ -207,7 +257,10 @@
                                 <select 
                                     className="w-full bg-white border-2 border-[#9BADC1] rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-[#9BADC1] outline-none font-black text-gray-700 text-xl transition-all cursor-pointer hover:bg-gray-50"
                                     value={selectedCollege}
-                                    onChange={(e) => setSelectedCollege(e.target.value)}
+                                    onChange={(e) => {
+                                        setSelectedCollege(e.target.value);
+                                        setShowReport(false);
+                                    }}
                                 >
                                     {sortedColleges.map(name => <option key={name} value={name}>{name}</option>)}
                                 </select>
@@ -361,9 +414,51 @@
                         </a>
                     </div>
 
+                    {/* 🚀 插入區塊：AI 智能診斷報告折疊區 */}
+                    <div className="mt-8 mb-12 overflow-hidden rounded-3xl border-2 border-dashed border-[#9BADC1] bg-white shadow-sm transition-all duration-300">
+                        <button 
+                            onClick={() => setShowReport(!showReport)}
+                            className="flex w-full flex-col items-center justify-between gap-4 p-6 hover:bg-slate-50 transition-colors md:flex-row"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="rounded-2xl bg-blue-50 p-3">
+                                    <SimpleIcon name="sparkles" color="#3b82f6" size={28} />
+                                </div>
+                                <div className="text-left">
+                                    <h3 className="flex items-center gap-2 text-xl font-black text-gray-800">
+                                        AI 智能診斷報告
+                                        <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">EXPERT INSIGHT</span>
+                                    </h3>
+                                    <p className="text-sm font-medium text-gray-400">點擊展開針對 {selectedCollege} 的數據深度分析報告</p>
+                                </div>
+                            </div>
+                            <div className={`rounded-full bg-slate-100 p-2 text-slate-400 transition-transform duration-300 ${showReport ? 'rotate-180' : ''}`}>
+                                <SimpleIcon name="chevron" color="#94a3b8" size={24} />
+                            </div>
+                        </button>
+                        
+                        {showReport && (
+                            <div className="fade-in border-t border-dashed border-slate-100 p-8 pt-6">
+                                {selectedSemester === "114-1" ? (
+                                    <div className="report-content">
+                                        <h2>{reportData.title}</h2>
+                                        <div dangerouslySetInnerHTML={{ __html: reportData.content }} />
+                                        <div className="mt-8 pt-6 border-t border-slate-50 text-center">
+                                            <p className="text-[10px] text-slate-300 font-bold uppercase tracking-[0.4em]">Analysis facilitated by NTUST Office of Bilingual Education Initiatives</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="p-12 text-center text-gray-400">
+                                        <SimpleIcon name="alert" color="#cbd5e1" size={48} className="mx-auto mb-4" />
+                                        <p className="font-bold">目前僅提供 114-1 學期的詳細專家診斷。其他學期之分析模組開發中。</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
                     <footer className="mt-12 pt-8 border-t-4 border-gray-100 text-center text-xs font-black text-gray-300 uppercase tracking-[0.6em]">
-                        {selectedSemester} | {selectedCollege} | FACILITATED BY NTUST EMI HELP CENTER
-                    </footer>
+                        {selectedSemester} | {selectedCollege} | FACILITATED BY NTUST Office of Bilingual Education Initiatives </footer>
                 </div>
             );
         }
