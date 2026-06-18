@@ -185,6 +185,7 @@
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy12Shjgj-hZxrYZiQV8MDYzfe7ZkDD9z4c2UmEOZK_bSLfAv8ZRitdFZpAuvq4GnpQU_qj-RP3z_K/pub?gid=1366984866&single=true&output=csv";
         const PREFERRED_ORDER = ['Overall (全校整體)', '工程學院', '電資學院', '管理學院', '應科學院', '設計學院', '人文學院', '產創學院', '通識中心'];
 
+        // 離線防護基本數據包
         const fallbackData = [{ 
             學期: "114-1", 單位: "Overall (全校整體)", 人數: 3340, 海外意願人數: 2871, 信心增加人數: 2405, 女性人數: 1101, 男性人數: 2239, 第一次修EMI人數: 1365, 非第一次修EMI人數: 1975, 
             自我調節學習: 3.8, "學術英語&學科學習": 3.6, Bloom認知: 3.8, 課程參與: 3.7, 自我效能: 3.8, 教師講授: 44, 師生互動: 21, 生生互動: 16, 學生報告: 15, 其他: 14,
@@ -206,25 +207,39 @@
         let allRows = fallbackData;
         let chartRadar, chartActivity, chartTrend;
 
-        function parseCSV(text) {
+        // 🚀 核心重構：採用強大的 RFC 4180 標準安全 CSV 狀態機解析引擎
+        // 這可以完美分辨「雙引號內的內部換行」與「真正的新橫列換行」
+        function parseStandardCSV(text) {
             const cleanText = text.replace(/^\uFEFF/, "");
-            const lines = cleanText.split(/\r?\n/).filter(l => l.trim() !== "");
-            if (lines.length < 2) return [];
-            const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-            return lines.slice(1).map(line => {
-                let values = [], current = "", inQuotes = false;
-                for (let i = 0; i < line.length; i++) {
-                    const char = line[i];
-                    if (char === '"') inQuotes = !inQuotes;
-                    else if (char === ',' && !inQuotes) { values.push(current.trim()); current = ""; }
-                    else current += char;
+            const result = [];
+            let row = [""];
+            let inQuotes = false;
+
+            for (let i = 0; i < cleanText.length; i++) {
+                let current = cleanText[i];
+                let next = cleanText[i+1];
+
+                if (current === '"') {
+                    if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; } // 處理雙引號轉義 ""
+                    else { inQuotes = !inQuotes; }
+                } else if (current === ',' && !inQuotes) {
+                    row.push('');
+                } else if ((current === '\r' || current === '\n') && !inQuotes) {
+                    if (current === '\r' && next === '\n') { i++; }
+                    result.push(row);
+                    row = [''];
+                } else {
+                    row[row.length - 1] += current;
                 }
-                values.push(current.trim());
+            }
+            if (row.length > 1 || row[0] !== '') { result.push(row); }
+            if (result.length < 2) return [];
+
+            const header = result[0].map(h => h.trim());
+            return result.slice(1).map(lineArr => {
                 let obj = {};
                 header.forEach((key, idx) => {
-                    let val = values[idx] || "";
-                    val = val.replace(/^"|"$/g, '').trim();
-                    obj[key] = val;
+                    obj[key] = (lineArr[idx] !== undefined) ? lineArr[idx].trim() : "";
                 });
                 return obj;
             });
@@ -237,14 +252,15 @@
                 const response = await fetch(SHEET_CSV_URL + '&cachebust=' + Date.now());
                 if (!response.ok) throw new Error("Network error");
                 const text = await response.text();
-                const data = parseCSV(text);
+                // 採用最新的標準解析器
+                const data = parseStandardCSV(text);
                 if (data && data.length > 0) {
                     allRows = data;
                     document.getElementById('data-status-badge').innerText = "● 雲端數據同步中";
                     document.getElementById('data-status-badge').className = "text-green-600";
                 }
             } catch (e) {
-                console.log("防護機制：切換至全防禦離線資料", e.message);
+                console.log("防護機制啟動：進入全數據安全隔離模式", e.message);
                 document.getElementById('data-status-badge').innerText = "● 離線展示模式 (已自動防護數據引擎)";
                 document.getElementById('data-status-badge').className = "text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200";
             }
@@ -308,24 +324,19 @@
             colSelect.innerHTML = sortedColleges.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
-        // 🚀 聰明的純文字自動排版轉換引擎
         function formatPlainTextToHtml(text) {
             if (!text) return "";
-            // 如果輸入的內容本來就含有 HTML 標籤，直接原樣輸出（維持向下相容）
             if (/<[a-z][\s\S]*>/i.test(text)) return text;
 
             const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
             return lines.map(line => {
-                // 判斷是否為大標題 (例如以 1. 2. 3. 或 🔹 符號開頭)
                 if (/^(\d+\.|[一二三四五六七八九十建議、]+[\.、]|🔹|✨|🔍)/.test(line)) {
                     return `<div class="report-heading-line">${line}</div>`;
                 }
-                // 判斷是否為項目清單 (例如以 - 或 * 或 • 開頭)
                 if (/^([\-\*•])/.test(line)) {
                     const cleanLine = line.replace(/^[\-\*•]\s*/, '');
                     return `<div class="report-bullet-line">${cleanLine}</div>`;
                 }
-                // 一般內文
                 return `<p class="report-text-line">${line}</p>`;
             }).join('');
         }
@@ -371,7 +382,6 @@
             renderDistribution(activeRaw, count);
             renderCharts(activeRaw);
 
-            // 🚀 套用自動排版轉換引擎
             const rTitle = activeRaw.AI報告標題 || `${sem} 學期 ${col} EMI 教學數據洞察報告`;
             const rawContent = activeRaw.AI報告內容 || "尚未在雲端表格中填寫此單位的 AI 智能診斷內容。請在 Google Sheets 的「AI報告標題」與「AI報告內容」欄位中進行編修。";
             const processedHtml = formatPlainTextToHtml(rawContent);
@@ -486,7 +496,7 @@
             }
         }
 
-        document.toggleReport = function() {
+        function toggleReport() {
             const block = document.getElementById('report-block');
             const arrow = document.getElementById('report-arrow');
             if(!block || !arrow) return;
