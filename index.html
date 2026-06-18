@@ -185,7 +185,6 @@
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy12Shjgj-hZxrYZiQV8MDYzfe7ZkDD9z4c2UmEOZK_bSLfAv8ZRitdFZpAuvq4GnpQU_qj-RP3z_K/pub?gid=1366984866&single=true&output=csv";
         const PREFERRED_ORDER = ['Overall (全校整體)', '工程學院', '電資學院', '管理學院', '應科學院', '設計學院', '人文學院', '產創學院', '通識中心'];
 
-        // 離線防護基本數據包
         const fallbackData = [{ 
             學期: "114-1", 單位: "Overall (全校整體)", 人數: 3340, 海外意願人數: 2871, 信心增加人數: 2405, 女性人數: 1101, 男性人數: 2239, 第一次修EMI人數: 1365, 非第一次修EMI人數: 1975, 
             自我調節學習: 3.8, "學術英語&學科學習": 3.6, Bloom認知: 3.8, 課程參與: 3.7, 自我效能: 3.8, 教師講授: 44, 師生互動: 21, 生生互動: 16, 學生報告: 15, 其他: 14,
@@ -207,8 +206,6 @@
         let allRows = fallbackData;
         let chartRadar, chartActivity, chartTrend;
 
-        // 🚀 核心重構：採用強大的 RFC 4180 標準安全 CSV 狀態機解析引擎
-        // 這可以完美分辨「雙引號內的內部換行」與「真正的新橫列換行」
         function parseStandardCSV(text) {
             const cleanText = text.replace(/^\uFEFF/, "");
             const result = [];
@@ -220,7 +217,7 @@
                 let next = cleanText[i+1];
 
                 if (current === '"') {
-                    if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; } // 處理雙引號轉義 ""
+                    if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; } 
                     else { inQuotes = !inQuotes; }
                 } else if (current === ',' && !inQuotes) {
                     row.push('');
@@ -252,7 +249,6 @@
                 const response = await fetch(SHEET_CSV_URL + '&cachebust=' + Date.now());
                 if (!response.ok) throw new Error("Network error");
                 const text = await response.text();
-                // 採用最新的標準解析器
                 const data = parseStandardCSV(text);
                 if (data && data.length > 0) {
                     allRows = data;
@@ -260,7 +256,7 @@
                     document.getElementById('data-status-badge').className = "text-green-600";
                 }
             } catch (e) {
-                console.log("防護機制啟動：進入全數據安全隔離模式", e.message);
+                console.log("防護機制：啟動全防禦隔離資料模式", e.message);
                 document.getElementById('data-status-badge').innerText = "● 離線展示模式 (已自動防護數據引擎)";
                 document.getElementById('data-status-badge').className = "text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200";
             }
@@ -324,19 +320,23 @@
             colSelect.innerHTML = sortedColleges.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
+        // 🚀 核心修改：優化排版判定規則，防止 86% 等單純數據行被加粗
         function formatPlainTextToHtml(text) {
             if (!text) return "";
             if (/<[a-z][\s\S]*>/i.test(text)) return text;
 
             const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
             return lines.map(line => {
-                if (/^(\d+\.|[一二三四五六七八九十建議、]+[\.、]|🔹|✨|🔍)/.test(line)) {
+                // 修正後的正規表達式：只認「🔹、✨、🔍、💡」特殊前綴，或者「數字後方緊跟半形點.或全形頓號、」才當作大標題
+                if (/^(🔹|✨|🔍|💡|[a-zA-Z0-9]+\s*[\.、]|[一二三四五六七八九十建議\s]+[\.、])/.test(line)) {
                     return `<div class="report-heading-line">${line}</div>`;
                 }
+                // 辨識清單項
                 if (/^([\-\*•])/.test(line)) {
                     const cleanLine = line.replace(/^[\-\*•]\s*/, '');
                     return `<div class="report-bullet-line">${cleanLine}</div>`;
                 }
+                // 普通內文（包含 86%、44% 等純數據起頭的句子）
                 return `<p class="report-text-line">${line}</p>`;
             }).join('');
         }
