@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EMI 學生素養分層分析儀表板</title>
+    <title>EMI 學生素養分層 analysis 儀表板</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -169,7 +169,7 @@
         // 離線安全防護完整數據模組
         const fallbackData = [{ 學期: "114-1", 單位: "Overall (全校整體)", 人數: 3340, 海外意願人數: 2871, 信心增加人數: 2405, 女性人數: 1101, 男性人數: 2239, 第一次修EMI人數: 1365, 非第一次修EMI人數: 1975, 自我調節學習: 3.8, "學術英語&學科學習": 3.6, Bloom認知: 3.8, 課程參與: 3.7, 自我效能: 3.8, 教師講授: 44, 師生互動: 21, 生生互動: 16, 學生報告: 15, 其他: 14 }];
 
-        // 🚀 100% 完整對齊版全校及各學院專家診斷報告資料庫
+        // 🚀 專家診斷報告資料庫
         const EXPERT_REPORTS = {
             "Overall (全校整體)": {
                 title: "114-1 學期 全校 EMI 教學數據洞察報告",
@@ -205,7 +205,7 @@
             },
             "通識中心": {
                 title: "114-1 學期 通識中心 EMI 數據洞察摘要",
-                content: `<h3>1. 現況總結</h3><p>展現高度學生自信與活潑互動結構。自我效能最高（4.1），非講授佔比超過 60%。</p><h3>2. 關鍵優勢：心理安全感</h3><p>互動平衡成功降低了語言焦慮，通識環境成為實踐英語的最佳空間。</p><h3>3. 待改進點：參與深度落差</h3><p>30.2% 為首次修讀，部分學生在缺乏具體引導時仍無法有效掌控學習進度。</p><h3>4. 教學建議</h3><ul><li>連結國際情境：模擬跨文化提案等任務。</li><li>提供討論句型：協助學生從「敢說」進階到「說得深」。</li></ul>`
+                content: `<h3>1. 現況總結</h3><p>展現高度學生自信與活潑互動結構。自我效能最高（4.1），非講授佔比超過 60%。</p><h3>2. 關鍵優勢：心理安全感</h3><p>互動平衡成功降低了語言焦慮，通識環境成為實踐英語的最佳空間。</p><h3>3. 待改進點：參與深度落差</h3><p>30.2% 為首次修讀，部分學生在缺乏具體引導時仍無法有效掌控學習進度。</p><h3>4. 教學建議</h3><ul><li>連結國際情境：模擬跨文化提案等任務.</li><li>提供討論句型：協助學生從「敢說」進階到「說得深」。</li></ul>`
             }
         };
 
@@ -316,11 +316,9 @@
             renderDistribution(activeRaw, count);
             renderCharts(activeRaw);
 
-            // 🚀 核心錯誤修正點：對使用者選取與雲端回傳的單位做精準對齊與容錯處理
             const targetKey = PREFERRED_ORDER.find(k => k.replace(/\s+/g, '') === col.replace(/\s+/g, '')) || col.trim();
             const report = EXPERT_REPORTS[targetKey] || EXPERT_REPORTS["Overall (全校整體)"];
             
-            // 將內容渲染到畫面上，確保大段內容完美彈出
             document.getElementById('report-content').innerHTML = `<h2>${report.title}</h2>${report.content}`;
         }
 
@@ -352,14 +350,77 @@
         }
 
         function renderCharts(raw) {
+            // 🚀 局部調整：雷達圖設定優化 (放大外圍字型、注入數值標籤)
+            const radarVals = [
+                parseFloat(raw.自我調節學習 || 0),
+                parseFloat(raw['學術英語&學科學習'] || 0),
+                parseFloat(raw.Bloom認知 || 0),
+                parseFloat(raw.課程參與 || 0),
+                parseFloat(raw.自我效能 || 0)
+            ];
+
             if (chartRadar) chartRadar.destroy();
             chartRadar = new Chart(document.getElementById('radarChart'), {
                 type: 'radar',
                 data: {
                     labels: ['自我調節學習', '學術英語&學科學習', 'Bloom認知', '課程參與', '自我效能'],
-                    datasets: [{ data: [parseFloat(raw.自我調節學習||0), parseFloat(raw['學術英語&學科學習']||0), parseFloat(raw.Bloom認知||0), parseFloat(raw.課程參與||0), parseFloat(raw.自我效能||0)], backgroundColor: 'rgba(155, 173, 193, 0.6)', borderColor: '#9BADC1', borderWidth: 3 }]
+                    datasets: [{ 
+                        data: radarVals, 
+                        backgroundColor: 'rgba(155, 173, 193, 0.4)', 
+                        borderColor: '#9BADC1', 
+                        borderWidth: 3,
+                        pointBackgroundColor: '#9BADC1',
+                        pointRadius: 4
+                    }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { r: { max: 5, min: 0, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    scales: { 
+                        r: { 
+                            max: 5, 
+                            min: 0, 
+                            ticks: { stepSize: 1, display: false },
+                            // 修正文字樣式：放大外圍指標標籤名稱
+                            pointLabels: {
+                                font: {
+                                    size: 16,
+                                    weight: '900',
+                                    family: '-apple-system, BlinkMacSystemFont, sans-serif'
+                                },
+                                color: '#334155'
+                            }
+                        } 
+                    }, 
+                    plugins: { 
+                        legend: { display: false },
+                        // 在數據點上即時標記平均得分
+                        tooltip: { enabled: true }
+                    } 
+                },
+                // 利用 Chart.js 插件系統在畫面上強制繪製數值標籤，防止使用者看漏
+                plugins: [{
+                    id: 'radarValueLabels',
+                    afterDatasetsDraw(chart) {
+                        const { ctx, scales: { r } } = chart;
+                        chart.data.datasets.forEach((dataset) => {
+                            const meta = chart.getDatasetMeta(0);
+                            meta.data.forEach((point, index) => {
+                                const val = dataset.data[index].toFixed(1);
+                                ctx.fillStyle = '#1e293b';
+                                ctx.font = 'bold 13px sans-serif';
+                                ctx.textAlign = 'center';
+                                
+                                // 微調標籤位置，避免被控制點蓋住
+                                const angle = r.getIndexAngle(index) - Math.PI / 2;
+                                const xOffset = Math.cos(angle) * 15;
+                                const yOffset = Math.sin(angle) * 15;
+                                
+                                ctx.fillText(val, point.x + xOffset, point.y + yOffset + 4);
+                            });
+                        });
+                    }
+                }]
             });
 
             if (chartActivity) chartActivity.destroy();
@@ -389,6 +450,7 @@
             });
         }
 
+        // AI 診斷折疊切換
         function toggleReport() {
             const block = document.getElementById('report-block');
             const arrow = document.getElementById('report-arrow');
