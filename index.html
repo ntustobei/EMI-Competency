@@ -11,15 +11,13 @@
         .bg-stats-bar { height: 54px; border-radius: 27px; overflow: hidden; display: flex; align-items: center; background-color: #f3f4f6; border: 1px solid #e5e7eb; }
         .bg-stats-segment { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 1000; color: white; text-shadow: 0px 1px 3px rgba(0,0,0,0.3); }
         
-        /* AI Report Styling */
-        .report-content h2 { font-size: 1.5rem; font-weight: 900; color: #1e293b; margin-bottom: 1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; text-align: left; }
-        .report-content h3 { font-size: 1.1rem; font-weight: 800; color: #334155; margin-top: 1.5rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; text-align: left; }
-        .report-content h3::before { content: ""; display: inline-block; width: 4px; height: 18px; background: #9BADC1; border-radius: 2px; }
-        .report-content p { color: #475569; line-height: 1.8; margin-bottom: 1rem; text-align: left; }
-        .report-content ul { margin-bottom: 1rem; text-align: left; list-style-type: none; padding-left: 0; }
-        .report-content li { margin-bottom: 0.75rem; padding-left: 1.25rem; position: relative; color: #475569; line-height: 1.6; text-align: left; }
-        .report-content li::before { content: "•"; position: absolute; left: 0; color: #9BADC1; font-weight: bold; }
-        .report-content strong { color: #1e293b; font-weight: 800; }
+        /* AI Report Auto-Styling */
+        .report-content h2 { font-size: 1.5rem; font-weight: 900; color: #1e293b; margin-bottom: 1.25rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; text-align: left; }
+        .report-text-line { color: #475569; line-height: 1.8; margin-bottom: 0.5rem; text-align: left; font-size: 1.05rem; }
+        .report-heading-line { font-size: 1.15rem; font-weight: 800; color: #1e293b; margin-top: 1.5rem; margin-bottom: 0.5rem; text-align: left; display: flex; align-items: center; gap: 0.5rem; }
+        .report-heading-line::before { content: ""; display: inline-block; width: 4px; height: 18px; background: #9BADC1; border-radius: 2px; }
+        .report-bullet-line { color: #475569; line-height: 1.8; padding-left: 1.25rem; position: relative; text-align: left; margin-bottom: 0.25rem; }
+        .report-bullet-line::before { content: "•"; position: absolute; left: 0; color: #9BADC1; font-weight: bold; }
         
         .question-tag { font-family: monospace; font-weight: 800; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; margin-right: 8px; }
     </style>
@@ -187,10 +185,11 @@
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy12Shjgj-hZxrYZiQV8MDYzfe7ZkDD9z4c2UmEOZK_bSLfAv8ZRitdFZpAuvq4GnpQU_qj-RP3z_K/pub?gid=1366984866&single=true&output=csv";
         const PREFERRED_ORDER = ['Overall (全校整體)', '工程學院', '電資學院', '管理學院', '應科學院', '設計學院', '人文學院', '產創學院', '通識中心'];
 
-        // 🚀 最高安全級別防護：補齊所有 30 項細項 Key 的完整本地預設備份資料庫（徹底防護崩潰）
         const fallbackData = [{ 
             學期: "114-1", 單位: "Overall (全校整體)", 人數: 3340, 海外意願人數: 2871, 信心增加人數: 2405, 女性人數: 1101, 男性人數: 2239, 第一次修EMI人數: 1365, 非第一次修EMI人數: 1975, 
             自我調節學習: 3.8, "學術英語&學科學習": 3.6, Bloom認知: 3.8, 課程參與: 3.7, 自我效能: 3.8, 教師講授: 44, 師生互動: 21, 生生互動: 16, 學生報告: 15, 其他: 14,
+            AI報告標題: "114-1 學期 全校 EMI 教學數據洞察報告",
+            AI報告內容: "1. 現況總結\n目前全校平衡發展中。\n\n2. 關鍵優勢\n海外移動力強。",
             SRL1:3.8, SRL2:3.7, SRL3:3.8, SRL4:3.9, SRL5:3.8, CALP1:3.6, CALP2:3.7, CALP3:3.5, CALP4:3.6, CALP5:3.6, CALP6:3.7,
             Cog1:3.8, Cog2:3.8, Cog3:3.9, Cog4:3.7, Cog5:3.7, Cog6:3.6, Eng1:3.7, Eng2:3.8, Eng3:3.7, Eng4:3.5, Eng5:3.9, Eng6:3.8, Eng7:3.8,
             SE1:3.9, SE2:3.8, SE3:3.6, SE4:3.9, SE5:3.7, SE6:3.8
@@ -203,18 +202,6 @@
             { category: "學習投入 (Engagement)", color: "#E2B4BD", items: [{ id: "Eng1", text: "The topics we discussed in class made me curious and interested in learning more about them." }, { id: "Eng2", text: "It was very interesting and engaging listening to the instructor talk about the main topics of this course." }, { id: "Eng3", text: "After engaging with the course materials, I became more interested and eager to learn more about the topic." }, { id: "Eng4", text: "I sometimes lost track of time in class because I was so involved in the topic." }, { id: "Eng5", text: "When we did group discussion, I became very involved in them." }, { id: "Eng6", text: "When we did tasks in class, I became involved in them." }, { id: "Eng7", text: "I enjoyed discussing the topics of this course with my classmates." }] },
             { category: "自我效能 (Self-Efficacy)", color: "#8697A8", items: [{ id: "SE1", text: "I believe I had the ability to complete the tasks we did in class." }, { id: "SE2", text: "I believe I had the ability to understand the spoken content delivered by the instructor." }, { id: "SE3", text: "I believe my English skills were adequate to meet the academic language demands of this course." }, { id: "SE4", text: "I believe I had the ability to understand the written and visual materials used in this course." }, { id: "SE5", text: "I believe I had the ability to understand the course topics as well as most of my classmates." }, { id: "SE6", text: "I believe I had the ability to explain key ideas from the course in my own words." }] }
         ];
-
-        const EXPERT_REPORTS = {
-            "Overall (全校整體)": { title: "114-1 學期 全校 EMI 教學數據洞察報告", content: `<h3>1. 現況總結：穩健發展中的全球接軌願景</h3><p>目前全校 EMI 學習成效表現平穩，五大素養指標平均落在 3.6 - 3.8 之間。高達 86.0% 的學生具備海外學習意願，顯示校園內正處於大規模的「新手轉型期」，教學現場面臨語言門檻與學科理解的雙重挑戰。</p><h3>2. 關鍵優勢：強大的國際移動力動機</h3><p>86% 的海外意願比例是推動 EMI 政策轉型最強大的槓桿。當學生將其視為通往國際舞台的「預演」，其自我效能與自我調節展現出正向韌性。</p><h3>3. 待改進點：學術英語與學科結合的銜接落差</h3><p>「學術英語與學科學習」指標（3.6）相對較低，且課堂仍有 44% 為教師講授。對初學者而言，過高比例的講授可能導致「語言超載」。</p><h3>4. 具體教學策略建議</h3><ul><li><strong>優化互動比例：</strong>將教師講授比例降至 35% 以下，轉化為引導式互動。</li><li><strong>運用分段式教學：</strong>將 50 分鐘講授切分為 15 分鐘輸入與 10 分鐘討論。</li></ul>` },
-            "工程學院": { title: "114-1 學期 工程學院 EMI 教學洞察分析報告", content: `<h3>1. 現況總結</h3><p>工程學院展現出「高動機、穩健認知、語言過渡期」特徵。學生在自我效能與 Bloom 認知表現穩定（皆為 3.8），且具備極強的國際移動意願（87.7%）。</p><h3>2. 關鍵優勢：強烈的國際化導向與學習自信</h3><p>87.7% 的學生表達海外意願，這是推動 EMI 課程的最佳施力點。顯示學生即使在全英環境下，對掌握專業知識仍具高度信心。</p><h3>3. 待改進點：學術英語與專業知識的深度融合</h3><p>學術英語銜接指標為五大素養最低（3.6）。維持近五成（47%）的單向講授可能導致新手產生學習斷層。</p><h3>4. 教學建議</h3><ul><li>實施支架式教學：加入視覺化教具與術語對照表。</li><li>優化生生互動：設計工程案例小組討論，提升實戰經驗。</li></ul>` },
-            "電資學院": { title: "114-1 學期 電資學院 EMI 教學數據洞察報告", content: `<h3>1. 現況總結</h3><p>呈現「高學習動機、高自主性，但語言負荷感重」特徵。52.2% 學生是首次修習 EMI。教學型態仍以教師講授為主（49%）。</p><h3>2. 關鍵優勢：強大的自主管理能力</h3><p>自我調節學習 (3.8) 為五大素養之冠，顯示學生具備自行尋求資源解決學理問題的潛力。</p><h3>3. 待改進點：學術英語轉換的認知負荷過載</h3><p>學科與英語整合指標最低（3.3），暗示專業學科遇上全英教學時產生了認知干擾。</p><h3>4. 教學建議</h3><ul><li>實施關鍵詞雲與語言支架：提供週專業術語對照表。</li><li>強化同儕教導：利用高自主特質，增加生生互動。</li></ul>` },
-            "管理學院": { title: "114-1 學期 管理學院 EMI 教學洞察摘要", content: `<h3>1. 現況總結</h3><p>呈現「高學習效能、高國際意願」特徵。學生在認知理解與自我效能感表現優異（均達 4.0/5.0），動機強烈。</p><h3>2. 關鍵優勢：高自我效能與深層認知參與</h3><p>Bloom 認知指標 (4.0) 與自我效能 (4.0) 表現最突出，適合推動強調個案分析的高階思維學習。</p><h3>3. 待改進點：學術英語轉換與口頭參與之缺口</h3><p>學術英語與課程參與得分最低（3.8），學生在運用英語進行即時專業討論時存在心理門檻。</p><h3>4. 教學建議</h3><ul><li>實施鷹架式互動：提供討論模板與專業句型包。</li><li>連結國際職涯情境：將課堂參與轉化為國際職場模擬練習。</li></ul>` },
-            "應科學院": { title: "114-1 應科學院 EMI 教學數據洞察", content: `<h3>1. 現況總結</h3><p>呈現「高互動性」特徵。非講授式互動總計超過 70%，反映出課程設計高度強調學生參與。</p><h3>2. 關鍵優勢：強烈的國際化動機</h3><p>高達 81.7% 的學生具備海外學習或實習意願。這是將 EMI 課程視為接軌國際跳板的強大驅動力。</p><h3>3. 待改進點：初次修課者的學術支持</h3><p>46.3% 的學生是第一次修習，對於如何有效使用英語進行深度專業學習，仍需更系統化的引導。</p><h3>4. 教學建議</h3><ul><li>語言鷹架：提供學術表達句型包。</li><li>同儕引導：安排經驗者與初次修課者混合編組。</li></ul>` },
-            "設計學院": { title: "114-1 學期 設計學院 EMI 教學洞察摘要", content: `<h3>1. 現況總結</h3><p>展現強大的認知處理能力與高度國際移動動機。非講授比例高達 66%，呈現積極的教學環境。</p><h3>2. 關鍵優勢：高階認知整合</h3><p>Bloom 認知表現 (3.9) 突出，顯示即使在全英環境下，仍能進行複雜的設計思考與創意批判。</p><h3>3. 待改進點：新手轉型期焦慮</h3><p>42.1% 為首次修讀，其對英語能力的焦慮可能會抑制設計專業上的信心釋放。</p><h3>4. 教學建議</h3><ul><li>強化視覺支架：增加圖表、模型與關鍵字清單。</li><li>優化設計評論：設計更多小組 Peer Review 環節。</li></ul>` },
-            "人文學院": { title: "114-1 人文學院 EMI 數據洞察摘要", content: `<h3>1. 現況總結</h3><p>展現高度穩定性與參與度。認知層次表現優異（4.0），且具極強國際移動意願（93.6%）。</p><h3>2. 關鍵優勢：均衡的參與生態</h3><p>課堂講授僅佔 31%，師生、生生互動佔比極高，顯示教師能有效運用 EMI 策略激發學生開口。</p><h3>3. 待改進點：自我調節學習 (SRL)</h3><p>SRL 指標 (3.8) 相較其他指標略低，學生在預習、複習等自主管理方面可能感到吃力。</p><h3>4. 教學建議</h3><ul><li>整合全球視野：在教材中刻意加入國際期刊摘要。</li><li>提供自主學習導航：提供每週 EMI Study Guide。</li></ul>` },
-            "產創學院": { title: "114-1 產創學院 EMI 教學洞察分析", content: `<h3>1. 現況總結</h3><p>學生展現出極強的實務應用導向，對提升國際競爭力深具信心。但教學仍偏向單向傳遞。</p><h3>2. 關鍵優勢：海外工作意願極高</h3><p>目標明確，利於將語言學習與未來職涯利基掛鉤，強化學習意義感。</p><h3>3. 教學建議</h3><ul><li>導入產業案例研究：優化生生互動佔比。</li><li>模擬技術會議：將語言學習融入實戰場景。</li></ul>` },
-            "通識中心": { title: "114-1 學期 通識中心 EMI 數據洞察摘要", content: `<h3>1. 現況總結</h3><p>展現高度學生自信與活潑互動結構。自我效能最高（4.1），非講授佔比超過 60%。</p><h3>2. 關鍵優勢：心理安全感</h3><p>互動平衡成功降低了語言焦慮，通識環境成為實踐英語的最佳空間。</p><h3>3. 待改進點：參與深度落差</h3><p>30.2% 為首次修讀，部分學生在缺乏具體引導時仍無法有效掌控學習進度。</p><h3>4. 教學建議</h3><ul><li>連結國際情境：模擬跨文化提案等任務。</li><li>提供討論句型：協助學生從「敢說」進階到「說得深」。</li></ul>` }
-        };
 
         let allRows = fallbackData;
         let chartRadar, chartActivity, chartTrend;
@@ -236,7 +223,7 @@
                 let obj = {};
                 header.forEach((key, idx) => {
                     let val = values[idx] || "";
-                    val = val.replace(/^"|"$/g, '').replace(/,/g, '').trim();
+                    val = val.replace(/^"|"$/g, '').trim();
                     obj[key] = val;
                 });
                 return obj;
@@ -244,7 +231,6 @@
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
-            // 優先渲染靜態問卷對照表，確保基礎結構安全
             renderQuestionMapping();
 
             try {
@@ -322,6 +308,28 @@
             colSelect.innerHTML = sortedColleges.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
+        // 🚀 聰明的純文字自動排版轉換引擎
+        function formatPlainTextToHtml(text) {
+            if (!text) return "";
+            // 如果輸入的內容本來就含有 HTML 標籤，直接原樣輸出（維持向下相容）
+            if (/<[a-z][\s\S]*>/i.test(text)) return text;
+
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
+            return lines.map(line => {
+                // 判斷是否為大標題 (例如以 1. 2. 3. 或 🔹 符號開頭)
+                if (/^(\d+\.|[一二三四五六七八九十建議、]+[\.、]|🔹|✨|🔍)/.test(line)) {
+                    return `<div class="report-heading-line">${line}</div>`;
+                }
+                // 判斷是否為項目清單 (例如以 - 或 * 或 • 開頭)
+                if (/^([\-\*•])/.test(line)) {
+                    const cleanLine = line.replace(/^[\-\*•]\s*/, '');
+                    return `<div class="report-bullet-line">${cleanLine}</div>`;
+                }
+                // 一般內文
+                return `<p class="report-text-line">${line}</p>`;
+            }).join('');
+        }
+
         function renderDashboard() {
             const semSelect = document.getElementById('select-semester');
             const colSelect = document.getElementById('select-college');
@@ -337,7 +345,6 @@
 
             const count = parseInt(activeRaw.人數 || 0);
 
-            // KPI 卡片填值
             document.getElementById('kpi-count').innerText = count.toLocaleString();
             
             const oversea = parseInt(activeRaw.海外意願人數 || 0);
@@ -364,10 +371,12 @@
             renderDistribution(activeRaw, count);
             renderCharts(activeRaw);
 
-            const targetKey = PREFERRED_ORDER.find(k => k.replace(/\s+/g, '') === String(col).replace(/\s+/g, '')) || String(col).trim();
-            const report = EXPERT_REPORTS[targetKey] || EXPERT_REPORTS["Overall (全校整體)"];
+            // 🚀 套用自動排版轉換引擎
+            const rTitle = activeRaw.AI報告標題 || `${sem} 學期 ${col} EMI 教學數據洞察報告`;
+            const rawContent = activeRaw.AI報告內容 || "尚未在雲端表格中填寫此單位的 AI 智能診斷內容。請在 Google Sheets 的「AI報告標題」與「AI報告內容」欄位中進行編修。";
+            const processedHtml = formatPlainTextToHtml(rawContent);
             
-            document.getElementById('report-content').innerHTML = `<h2>${report.title}</h2>${report.content}`;
+            document.getElementById('report-content').innerHTML = `<h2>${rTitle}</h2><div>${processedHtml}</div>`;
         }
 
         function renderDistribution(raw, total) {
@@ -477,7 +486,7 @@
             }
         }
 
-        function toggleReport() {
+        document.toggleReport = function() {
             const block = document.getElementById('report-block');
             const arrow = document.getElementById('report-arrow');
             if(!block || !arrow) return;
