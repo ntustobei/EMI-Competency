@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EMI 學生素養分層分析儀表板</title>
-    <!-- 核心庫載入 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
@@ -159,9 +158,9 @@
         };
 
         // ==========================================
-        // 🛠️ 輔助函數
+        // 🛠️ 輔助函數與修正
         // ==========================================
-        const SimpleIcon = ({ name, color = "#666", size = 20 }) => {
+        const SimpleIcon = ({ name, color = "#666", size = 20, className = "" }) => {
             const icons = {
                 users: `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`,
                 globe: `<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20"/><path d="M2 12h20"/><path d="M12 2a14.5 14.5 0 0 1 0 20"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/>`,
@@ -179,7 +178,7 @@
             };
             return (
                 <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
-                     dangerouslySetInnerHTML={{ __html: icons[name] || "" }} />
+                     className={className} dangerouslySetInnerHTML={{ __html: icons[name] || "" }} />
             );
         };
 
@@ -206,7 +205,7 @@
                 let obj = {};
                 header.forEach((key, idx) => {
                     let val = values[idx] || "";
-                    val = val.replace(/^"|"$/g, '').replace(/(?!^\d+)\,(?=\d+)/g, ''); 
+                    val = val.replace(/^"|"$/g, '').replace(/,/g, '').trim(); 
                     obj[key] = val;
                 });
                 return obj;
@@ -248,9 +247,11 @@
             React.useEffect(() => {
                 const fetchData = async () => {
                     try {
-                        const fetchUrl = SHEET_CSV_URL + (SHEET_CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
-                        const response = await fetch(fetchUrl, { cache: "no-store" });
-                        if (!response.ok) throw new Error("Network error");
+                        // 修正：某些 Google Sheet 發布連結在背後不支援過度複雜的防快取參數，此處精簡化
+                        const fetchUrl = SHEET_CSV_URL + '&cachebust=' + Date.now();
+                        const response = await fetch(fetchUrl, { method: 'GET' });
+                        
+                        if (!response.ok) throw new Error("CORS or Network error");
                         const text = await response.text();
                         const data = parseCSV(text);
                         
@@ -262,9 +263,12 @@
                             const defCol = PREFERRED_ORDER.find(c => units.includes(c)) || units[0];
                             setSelectedCollege(defCol);
                             setDataStatus('cloud');
+                        } else {
+                            throw new Error("Empty data");
                         }
                     } catch (e) {
-                        setDataStatus('error');
+                        console.log("切換至防禦型離線預覽模式:", e.message);
+                        setDataStatus('error'); // 觸發離線展示
                     } finally {
                         setLoading(false);
                         const loader = document.getElementById('loading-screen');
@@ -304,12 +308,16 @@
                 <div className="max-w-7xl mx-auto p-4 md:p-8 fade-in text-center md:text-left">
                     <header className="flex flex-col md:flex-row justify-between items-center border-b-2 border-gray-100 pb-6 mb-8 gap-6">
                         <div>
-                            <h1 className="text-3xl font-black text-gray-800 tracking-tight">EMI 學生素養分層分析儀表板</h1>
+                            <h1 className="text-3xl font-black text-gray-800 tracking-tight">EMI 學生素養分層 analysis 儀表板</h1>
                             <p className="text-gray-500 font-medium mt-1">
                                 {selectedSemester} 學期 | 當前視角: <span className="text-[#9BADC1] font-bold underline decoration-4 underline-offset-8">{selectedCollege}</span>
                             </p>
                             <div className="flex items-center gap-2 mt-2 justify-center md:justify-start text-[11px] font-bold">
-                                {dataStatus === 'cloud' ? <span className="text-green-600">● 雲端數據同步中</span> : <span className="text-amber-600">● 離線展示模式</span>}
+                                {dataStatus === 'cloud' ? (
+                                    <span className="text-green-600">● 雲端數據同步中</span>
+                                ) : (
+                                    <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">● 離線展示模式 (已阻隔數據引擎卡死)</span>
+                                )}
                                 <span className="text-gray-300 mx-1">|</span>
                                 <p className="text-gray-400 italic">NTUST Office of Bilingual Education Initiatives</p>
                             </div>
@@ -443,17 +451,19 @@
                                     { name: '師生互動', value: parseInt(activeRaw.師生互動 || 0) },
                                     { name: '生生互動', value: parseInt(activeRaw.生生互動 || 0) },
                                     { name: '學生報告', value: parseInt(activeRaw.學生報告 || 0) },
-                                    { name: '其他', value: parseInt(activeRaw.其他 || 0) }
+                                    { name: '其他', value: parseInt(activeRaw.開源 || 0) || parseInt(activeRaw.其他 || 0) }
                                 ]} layout="vertical" margin={{ left: 20, right: 100 }}>
                                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#eee" />
                                     <XAxis type="number" domain={[0, 60]} hide />
-                                    <YAxis dataKey="name" type="category" tick={{fontSize: 18, font_weight: '1000', fill: '#334155'}} width={120} />
+                                    {/* 修正：將屬性 font_weight 改為正統 camelCase 駝峰式的 fontWeight */}
+                                    <YAxis dataKey="name" type="category" tick={{fontSize: 18, fontWeight: '1000', fill: '#334155'}} width={120} />
                                     <Tooltip />
                                     <Bar dataKey="value" radius={[0, 20, 20, 0]} barSize={60}>
                                         {[0,1,2,3,4].map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={index === 0 ? '#9BADC1' : index % 2 === 0 ? '#B9B1D2' : '#E2B4BD'} />
                                         ))}
-                                        <LabelList dataKey="value" position="right" formatter={(v) => `${v}%`} style={{ fontSize: '24px', font_weight: '1000', fill: '#000' }} />
+                                        {/* 修正：將屬性 font_weight 改為正統 camelCase 駝峰式的 fontWeight */}
+                                        <LabelList dataKey="value" position="right" formatter={(v) => `${v}%`} style={{ fontSize: '24px', fontWeight: '1000', fill: '#000' }} />
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
@@ -466,7 +476,7 @@
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart data={Object.keys(activeRaw)
                                     .filter(k => /^(SRL|CALP|Cog|Eng|SE)\d+$/.test(k))
-                                    .map(k => ({ name: k, score: parseFloat(activeRaw[k]) }))}>
+                                    .map(k => ({ name: k, score: parseFloat(activeRaw[k]) || 0 }))}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                     <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: '900' }} interval={0} />
                                     <YAxis domain={[0, 5]} tick={{fontSize: 14, fontWeight: '900'}} />
@@ -478,7 +488,7 @@
                         </div>
                     </div>
 
-                    {/* 🚀 移動：30 項測量細項題項對照表 (現在位於 趨勢圖 之後，按鈕 之前) */}
+                    {/* 🚀 30 項測量細項題項對照表 */}
                     <div className="mt-8 mb-10 bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
                         <div className="flex items-center gap-3 mb-8">
                             <div className="p-2 bg-slate-100 rounded-lg">
@@ -534,7 +544,7 @@
                                         AI 智能診斷報告
                                         <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">EXPERT INSIGHT</span>
                                     </h3>
-                                    <p className="text-sm font-medium text-gray-400">點擊展開針對 {selectedCollege} 的數據深度分析報告</p>
+                                    <p className="text-sm font-medium text-gray-400">點擊展開針對 {selectedCollege} 的數據深度 analysis 報告</p>
                                 </div>
                             </div>
                             <div className={`rounded-full bg-slate-100 p-2 text-slate-400 transition-transform duration-300 ${showReport ? 'rotate-180' : ''}`}>
