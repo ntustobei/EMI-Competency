@@ -15,10 +15,11 @@
         .report-content h2 { font-size: 1.5rem; font-weight: 900; color: #1e293b; margin-bottom: 1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
         .report-content h3 { font-size: 1.1rem; font-weight: 800; color: #334155; margin-top: 1.5rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
         .report-content h3::before { content: ""; display: inline-block; width: 4px; height: 18px; background: #9BADC1; border-radius: 2px; }
-        .report-content p { color: #475569; line-height: 1.8; margin-bottom: 1rem; }
-        .report-content ul { margin-bottom: 1rem; }
+        .report-content p { color: #475569; line-height: 1.8; margin-bottom: 1rem; text-align: left; }
+        .report-content ul { margin-bottom: 1rem; text-align: left; }
         .report-content li { margin-bottom: 0.75rem; padding-left: 1.25rem; position: relative; color: #475569; line-height: 1.6; }
         .report-content li::before { content: "•"; position: absolute; left: 0; color: #9BADC1; font-weight: bold; }
+        .report-content strong { color: #1e293b; font-weight: 800; }
         
         .question-tag { font-family: monospace; font-weight: 800; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; margin-right: 8px; }
     </style>
@@ -165,19 +166,52 @@
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy12Shjgj-hZxrYZiQV8MDYzfe7ZkDD9z4c2UmEOZK_bSLfAv8ZRitdFZpAuvq4GnpQU_qj-RP3z_K/pub?gid=1366984866&single=true&output=csv";
         const PREFERRED_ORDER = ['Overall (全校整體)', '工程學院', '電資學院', '管理學院', '應科學院', '設計學院', '人文學院', '產創學院', '通識中心'];
 
-        // 離線備用完整數據（萬一被 Vercel/學校 CORS 阻擋時立刻發揮作用，防護轉圈卡死）
+        // 離線安全防護完整數據模組
         const fallbackData = [{ 學期: "114-1", 單位: "Overall (全校整體)", 人數: 3340, 海外意願人數: 2871, 信心增加人數: 2405, 女性人數: 1101, 男性人數: 2239, 第一次修EMI人數: 1365, 非第一次修EMI人數: 1975, 自我調節學習: 3.8, "學術英語&學科學習": 3.6, Bloom認知: 3.8, 課程參與: 3.7, 自我效能: 3.8, 教師講授: 44, 師生互動: 21, 生生互動: 16, 學生報告: 15, 其他: 14 }];
 
+        // 🚀 完整注入的 114-1 各學院專家分析報告
         const EXPERT_REPORTS = {
-            "Overall (全校整體)": { title: "114-1 全校 EMI 教學數據洞察報告", content: `<h3>1. 現況總結：穩健發展中的全球接軌願景</h3><p>目前全校 EMI 學習成效表現平穩...</p>` },
-            "工程學院": { title: "114-1 工程學院 EMI 教學洞察分析報告", content: `<h3>1. 現況總結</h3><p>工程學院展現出「高動機、穩健認知」特徵...</p>` }
-            // 可自由補充其他學院報告...
+            "Overall (全校整體)": {
+                title: "114-1 學期 全校 EMI 教學數據洞察報告",
+                content: `<h3>1. 現況總結：穩健發展中的全球接軌願景</h3><p>目前全校 EMI 學習成效表現平穩，五大素養指標平均落在 3.6 - 3.8 之間。高達 86.0% 的學生具備海外學習意願，顯示校園內正處於大規模的「新手轉型期」，教學現場面臨語言門檻與學科理解的雙重挑戰。</p><h3>2. 關鍵優勢：強大的國際移動力動機</h3><p>86% 的海外意願比例是推動 EMI 政策轉型最強大的槓桿。當學生將其視為通往國際舞台的「預演」，其自我效能與自我調節展現出正向韌性。</p><h3>3. 待改進點：學術英語與學科結合的銜接落差</h3><p>「學術英語與學科學習」指標（3.6）相對較低，且課堂仍有 44% 為教師講授。對初學者而言，過高比例的講授可能導致「語言超載」。</p><h3>4. 具體教學策略建議</h3><ul><li><strong>優化互動比例：</strong>將教師講授比例降至 35% 以下，轉化為引導式互動。</li><li><strong>運用分段式教學：</strong>將 50 分鐘講授切分為 15 分鐘輸入與 10 分鐘討論。</li></ul>`
+            },
+            "工程學院": {
+                title: "114-1 學期 工程學院 EMI 教學洞察分析報告",
+                content: `<h3>1. 現況總結</h3><p>工程學院展現出「高動機、穩健認知、語言過渡期」特徵。學生在自我效能與 Bloom 認知表現穩定（皆為 3.8），且具備極強的國際移動意願（87.7%）。</p><h3>2. 關鍵優勢：強烈的國際化導向與學習自信</h3><p>87.7% 的學生表達海外意願，這是推動 EMI 課程的最佳施力點。顯示學生即使在全英環境下，對掌握專業知識仍具高度信心。</p><h3>3. 待改進點：學術英語與專業知識的深度融合</h3><p>學術英語銜接指標為五大素養最低（3.6）。維持近五成（47%）的單向講授可能導致新手產生學習斷層。</p><h3>4. 教學建議</h3><ul><li>實施支架式教學：加入視覺化教具與術語對照表。</li><li>優化生生互動：設計工程案例小組討論，提升實戰經驗。</li></ul>`
+            },
+            "電資學院": {
+                title: "114-1 學期 電資學院 EMI 教學數據洞察報告",
+                content: `<h3>1. 現況總結</h3><p>呈現「高學習動機、高自主性，但語言負荷感重」特徵。52.2% 學生是首次修習 EMI。教學型態仍以教師講授為主（49%）。</p><h3>2. 關鍵優勢：強大的自主管理能力</h3><p>自我調節學習 (3.8) 為五大素養之冠，顯示學生具備自行尋求資源解決學理問題的潛力。</p><h3>3. 待改進點：學術英語轉換的認知負荷過載</h3><p>學科與英語整合指標最低（3.3），暗示專業學科遇上全英教學時產生了認知干擾。</p><h3>4. 教學建議</h3><ul><li>實施關鍵詞雲與語言支架：提供週專業術語對照表。</li><li>強化同儕教導：利用高自主特質，增加生生互動。</li></ul>`
+            },
+            "管理學院": {
+                title: "114-1 學期 管理學院 EMI 教學洞察摘要",
+                content: `<h3>1. 現況總結</h3><p>呈現「高學習效能、高國際意願」特徵。學生在認知理解與自我效能感表現優異（均達 4.0/5.0），動機強烈。</p><h3>2. 關鍵優勢：高自我效能與深層認知參與</h3><p>Bloom 認知指標 (4.0) 與自我效能 (4.0) 表現最突出，適合推動強調個案分析的高階思維學習。</p><h3>3. 待改進點：學術英語轉換與口頭參與之缺口</h3><p>學術英語與課程參與得分最低（3.8），學生在運用英語進行即時專業討論時存在心理門檻。</p><h3>4. 教學建議</h3><ul><li>實施鷹架式互動：提供討論模板與專業句型包。</li><li>連結國際職涯情境：將課堂參與轉化為國際職場模擬練習。</li></ul>`
+            },
+            "應科學院": {
+                title: "114-1 應科學院 EMI 教學數據洞察",
+                content: `<h3>1. 現況總結</h3><p>呈現「高互動性」特徵。非講授式互動總計超過 70%，反映出課程設計高度強調學生參與。</p><h3>2. 關鍵優勢：強烈的國際化動機</h3><p>高達 81.7% 的學生具備海外學習或實習意願。這是將 EMI 課程視為接軌國際跳板的強大驅動力。</p><h3>3. 待改進點：初次修課者的學術支持</h3><p>46.3% 的學生是第一次修習，對於如何有效使用英語進行深度專業學習，仍需更系統化的引導。</p><h3>4. 教學建議</h3><ul><li>語言鷹架：提供學術表達句型包.</li><li>同儕引導：安排經驗者與初次修課者混合編組。</li></ul>`
+            },
+            "設計學院": {
+                title: "114-1 學期 設計學院 EMI 教學洞察摘要",
+                content: `<h3>1. 現況總結</h3><p>展現強大的認知處理能力與高度國際移動動機。非講授比例高達 66%，呈現積極的教學環境。</p><h3>2. 關鍵優勢：高階認知整合</h3><p>Bloom 認知表現 (3.9) 突出，顯示即使在全英環境下，仍能進行複雜的設計思考與創意批判。</p><h3>3. 待改進點：新手轉型期焦慮</h3><p>42.1% 為首次修讀，其對英語能力的焦慮可能會抑制設計專業上的信心釋放。</p><h3>4. 教學建議</h3><ul><li>強化視覺支架：增加圖表、模型與關鍵字清單。</li><li>優化設計評論：設計更多小組 Peer Review 環節。</li></ul>`
+            },
+            "人文學院": {
+                title: "114-1 人文學院 EMI 數據洞察摘要",
+                content: `<h3>1. 現況總結</h3><p>展現高度穩定性與參與度。認知層次表現優異（4.0），且具極強國際移動意願（93.6%）。</p><h3>2. 關鍵優勢：均衡的參與生態</h3><p>課堂講授僅佔 31%，師生、生生互動佔比極高，顯示教師能有效運用 EMI 策略激發學生開口。</p><h3>3. 待改進點：自我調節學習 (SRL)</h3><p>SRL 指標 (3.8) 相較其他指標略低，學生在預習、複習等自主管理方面可能感到吃力。</p><h3>4. 教學建議</h3><ul><li>整合全球視野：在教材中刻意加入國際期刊摘要。</li><li>提供自主學習導航：提供每週 EMI Study Guide。</li></ul>`
+            },
+            "產創學院": {
+                title: "114-1 產創學院 EMI 教學洞察分析",
+                content: `<h3>1. 現況總結</h3><p>學生展現出極強的實務應用導向，對提升國際競爭力深具信心。但教學仍偏向單向傳遞。</p><h3>2. 關鍵優勢：海外工作意願極高</h3><p>目標明確，利於將語言學習與未來職涯利基掛鉤，強化學習意義感。</p><h3>3. 教學建議</h3><ul><li>導入產業案例研究：優化生生互動佔比。</li><li>模擬技術會議：將語言學習融入實戰場景。</li></ul>`
+            },
+            "通識中心": {
+                title: "114-1 學期 通識中心 EMI 數據洞察摘要",
+                content: `<h3>1. 現況總結</h3><p>展現高度學生自信與活潑互動結構。自我效能最高（4.1），非講授佔比超過 60%。</p><h3>2. 關鍵優勢：心理安全感</h3><p>互動平衡成功降低了語言焦慮，通識環境成為實踐英語的最佳空間。</p><h3>3. 待改進點：參與深度落差</h3><p>30.2% 為首次修讀，部分學生在缺乏具體引導時仍無法有效掌控學習進度。</p><h3>4. 教學建議</h3><ul><li>連結國際情境：模擬跨文化提案等任務。</li><li>提供討論句型：協助學生從「敢說」進階到「說得深」。</li></ul>`
+            }
         };
 
         let allRows = fallbackData;
         let chartRadar, chartActivity, chartTrend;
 
-        // 解析 CSV 模組
         function parseCSV(text) {
             const cleanText = text.replace(/^\uFEFF/, "");
             const lines = cleanText.split(/\r?\n/).filter(l => l.trim() !== "");
@@ -202,11 +236,10 @@
             });
         }
 
-        // 初始化載入
         window.addEventListener('DOMContentLoaded', async () => {
             try {
                 const response = await fetch(SHEET_CSV_URL + '&cachebust=' + Date.now());
-                if (!response.ok) throw new Error("CORS or Network error");
+                if (!response.ok) throw new Error("Network error");
                 const text = await response.text();
                 const data = parseCSV(text);
                 if (data && data.length > 0) {
@@ -215,14 +248,10 @@
                     document.getElementById('data-status-badge').className = "text-green-600";
                 }
             } catch (e) {
-                console.log("切換至全防禦安全模式 (離線模式啟動):", e.message);
+                console.log("離線保險模式啟動:", e.message);
                 document.getElementById('data-status-badge').innerText = "● 離線展示模式 (已阻隔數據引擎卡死)";
                 document.getElementById('data-status-badge').className = "text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200";
             }
-
-            // 精確移除過渡載入畫面
-            const loader = document.getElementById('loading-screen');
-            if(loader) loader.style.display = 'none';
 
             initDropdowns();
             renderDashboard();
@@ -254,7 +283,6 @@
             colSelect.innerHTML = sortedColleges.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
-        // 主渲染邏輯
         function renderDashboard() {
             const sem = document.getElementById('select-semester').value;
             const col = document.getElementById('select-college').value;
@@ -264,7 +292,6 @@
             const activeRaw = allRows.find(r => String(r.學期).trim() === sem && String(r.單位).trim() === col) || allRows[0];
             const count = parseInt(activeRaw.人數 || 0);
 
-            // 填充 KPI 卡片
             document.getElementById('kpi-count').innerText = count.toLocaleString();
             
             const oversea = parseInt(activeRaw.海外意願人數 || 0);
@@ -277,7 +304,6 @@
 
             document.getElementById('kpi-gender').innerText = `${activeRaw.女性人數 || 0} / ${activeRaw.男性人數 || 0}`;
 
-            // 填充五大指標與進度條
             const metrics = ['自我調節學習', '學術英語&學科學習', 'Bloom認知', '課程參與', '自我效能'];
             const ids = ['srl', 'calp', 'cog', 'eng', 'se'];
             
@@ -287,13 +313,10 @@
                 document.getElementById(`bar-${ids[idx]}`).style.width = `${(val/5)*100}%`;
             });
 
-            // 填充背景資料分佈
             renderDistribution(activeRaw, count);
-
-            // 渲染三大 Chart.js 圖表
             renderCharts(activeRaw);
 
-            // 填充診斷報告
+            // 根據目前選擇的學院名稱，動態讀取對應的 AI 報告內容
             const report = EXPERT_REPORTS[col] || { title: `${sem} 學期 EMI 教學數據診斷報告`, content: `<p>該單位的詳細指標表現平穩，建議加強生生互動比例以提升整體學習投入。</p>` };
             document.getElementById('report-content').innerHTML = `<h2>${report.title}</h2>${report.content}`;
         }
