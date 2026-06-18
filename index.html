@@ -12,12 +12,12 @@
         .bg-stats-segment { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 1000; color: white; text-shadow: 0px 1px 3px rgba(0,0,0,0.3); }
         
         /* AI Report Styling */
-        .report-content h2 { font-size: 1.5rem; font-weight: 900; color: #1e293b; margin-bottom: 1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
-        .report-content h3 { font-size: 1.1rem; font-weight: 800; color: #334155; margin-top: 1.5rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+        .report-content h2 { font-size: 1.5rem; font-weight: 900; color: #1e293b; margin-bottom: 1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; text-align: left; }
+        .report-content h3 { font-size: 1.1rem; font-weight: 800; color: #334155; margin-top: 1.5rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; text-align: left; }
         .report-content h3::before { content: ""; display: inline-block; width: 4px; height: 18px; background: #9BADC1; border-radius: 2px; }
         .report-content p { color: #475569; line-height: 1.8; margin-bottom: 1rem; text-align: left; }
-        .report-content ul { margin-bottom: 1rem; text-align: left; }
-        .report-content li { margin-bottom: 0.75rem; padding-left: 1.25rem; position: relative; color: #475569; line-height: 1.6; }
+        .report-content ul { margin-bottom: 1rem; text-align: left; list-style-type: none; padding-left: 0; }
+        .report-content li { margin-bottom: 0.75rem; padding-left: 1.25rem; position: relative; color: #475569; line-height: 1.6; text-align: left; }
         .report-content li::before { content: "•"; position: absolute; left: 0; color: #9BADC1; font-weight: bold; }
         .report-content strong { color: #1e293b; font-weight: 800; }
         
@@ -169,7 +169,7 @@
         // 離線安全防護完整數據模組
         const fallbackData = [{ 學期: "114-1", 單位: "Overall (全校整體)", 人數: 3340, 海外意願人數: 2871, 信心增加人數: 2405, 女性人數: 1101, 男性人數: 2239, 第一次修EMI人數: 1365, 非第一次修EMI人數: 1975, 自我調節學習: 3.8, "學術英語&學科學習": 3.6, Bloom認知: 3.8, 課程參與: 3.7, 自我效能: 3.8, 教師講授: 44, 師生互動: 21, 生生互動: 16, 學生報告: 15, 其他: 14 }];
 
-        // 🚀 完整注入的 114-1 各學院專家分析報告
+        // 🚀 100% 完整對齊版全校及各學院專家診斷報告資料庫
         const EXPERT_REPORTS = {
             "Overall (全校整體)": {
                 title: "114-1 學期 全校 EMI 教學數據洞察報告",
@@ -189,7 +189,7 @@
             },
             "應科學院": {
                 title: "114-1 應科學院 EMI 教學數據洞察",
-                content: `<h3>1. 現況總結</h3><p>呈現「高互動性」特徵。非講授式互動總計超過 70%，反映出課程設計高度強調學生參與。</p><h3>2. 關鍵優勢：強烈的國際化動機</h3><p>高達 81.7% 的學生具備海外學習或實習意願。這是將 EMI 課程視為接軌國際跳板的強大驅動力。</p><h3>3. 待改進點：初次修課者的學術支持</h3><p>46.3% 的學生是第一次修習，對於如何有效使用英語進行深度專業學習，仍需更系統化的引導。</p><h3>4. 教學建議</h3><ul><li>語言鷹架：提供學術表達句型包.</li><li>同儕引導：安排經驗者與初次修課者混合編組。</li></ul>`
+                content: `<h3>1. 現況總結</h3><p>呈現「高互動性」特徵。非講授式互動總計超過 70%，反映出課程設計高度強調學生參與。</p><h3>2. 關鍵優勢：強烈的國際化動機</h3><p>高達 81.7% 的學生具備海外學習或實習意願。這是將 EMI 課程視為接軌國際跳板的強大驅動力。</p><h3>3. 待改進點：初次修課者的學術支持</h3><p>46.3% 的學生是第一次修習，對於如何有效使用英語進行深度專業學習，仍需更系統化的引導。</p><h3>4. 教學建議</h3><ul><li>語言鷹架：提供學術表達句型包。</li><li>同儕引導：安排經驗者與初次修課者混合編組。</li></ul>`
             },
             "設計學院": {
                 title: "114-1 學期 設計學院 EMI 教學洞察摘要",
@@ -316,8 +316,11 @@
             renderDistribution(activeRaw, count);
             renderCharts(activeRaw);
 
-            // 根據目前選擇的學院名稱，動態讀取對應的 AI 報告內容
-            const report = EXPERT_REPORTS[col] || { title: `${sem} 學期 EMI 教學數據診斷報告`, content: `<p>該單位的詳細指標表現平穩，建議加強生生互動比例以提升整體學習投入。</p>` };
+            // 🚀 核心錯誤修正點：對使用者選取與雲端回傳的單位做精準對齊與容錯處理
+            const targetKey = PREFERRED_ORDER.find(k => k.replace(/\s+/g, '') === col.replace(/\s+/g, '')) || col.trim();
+            const report = EXPERT_REPORTS[targetKey] || EXPERT_REPORTS["Overall (全校整體)"];
+            
+            // 將內容渲染到畫面上，確保大段內容完美彈出
             document.getElementById('report-content').innerHTML = `<h2>${report.title}</h2>${report.content}`;
         }
 
@@ -349,7 +352,6 @@
         }
 
         function renderCharts(raw) {
-            // 1. 雷達圖
             if (chartRadar) chartRadar.destroy();
             chartRadar = new Chart(document.getElementById('radarChart'), {
                 type: 'radar',
@@ -360,7 +362,6 @@
                 options: { responsive: true, maintainAspectRatio: false, scales: { r: { max: 5, min: 0, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
             });
 
-            // 2. 教學活動橫向長條圖
             if (chartActivity) chartActivity.destroy();
             chartActivity = new Chart(document.getElementById('activityChart'), {
                 type: 'bar',
@@ -371,7 +372,6 @@
                 options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
 
-            // 3. 30項細項趨勢圖
             const trendKeys = Object.keys(raw).filter(k => /^(SRL|CALP|Cog|Eng|SE)\d+$/.test(k));
             const trendVals = trendKeys.map(k => parseFloat(raw[k]) || 0);
 
