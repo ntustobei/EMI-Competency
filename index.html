@@ -3,165 +3,568 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EMI 學生素養分層分析儀表板</title>
+    <title>EMI 學生素養分層分析儀表板 (整合對照版)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-        .bg-stats-bar { height: 54px; border-radius: 27px; overflow: hidden; display: flex; align-items: center; background-color: #f3f4f6; border: 1px solid #e5e7eb; }
-        .bg-stats-segment { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 1000; color: white; text-shadow: 0px 1px 3px rgba(0,0,0,0.3); }
+        body { 
+            background-color: #f8fafc; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+        }
+        .bg-stats-bar { 
+            height: 44px; 
+            border-radius: 22px; 
+            overflow: hidden; 
+            display: flex; 
+            align-items: center; 
+            background-color: #f1f5f9; 
+            border: 1px solid #e2e8f0; 
+        }
+        .bg-stats-segment { 
+            height: 100%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 15px; 
+            font-weight: 800; 
+            color: white; 
+            text-shadow: 0px 1px 2px rgba(0,0,0,0.3); 
+            transition: width 0.5s ease-in-out;
+        }
         
         /* AI Report Auto-Styling */
-        .report-content h2 { font-size: 1.5rem; font-weight: 900; color: #1e293b; margin-bottom: 1.25rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; text-align: left; }
-        .report-text-line { color: #475569; line-height: 1.8; margin-bottom: 0.5rem; text-align: left; font-size: 1.05rem; }
-        .report-heading-line { font-size: 1.15rem; font-weight: 800; color: #1e293b; margin-top: 1.5rem; margin-bottom: 0.5rem; text-align: left; display: flex; align-items: center; gap: 0.5rem; }
-        .report-heading-line::before { content: ""; display: inline-block; width: 4px; height: 18px; background: #9BADC1; border-radius: 2px; }
-        .report-bullet-line { color: #475569; line-height: 1.8; padding-left: 1.25rem; position: relative; text-align: left; margin-bottom: 0.25rem; }
-        .report-bullet-line::before { content: "•"; position: absolute; left: 0; color: #9BADC1; font-weight: bold; }
+        .report-content h2 { 
+            font-size: 1.35rem; 
+            font-weight: 900; 
+            color: #1e293b; 
+            margin-bottom: 1rem; 
+            border-bottom: 2px solid #e2e8f0; 
+            padding-bottom: 0.5rem; 
+            text-align: left; 
+        }
+        .report-text-line { 
+            color: #475569; 
+            line-height: 1.7; 
+            margin-bottom: 0.5rem; 
+            text-align: left; 
+            font-size: 0.95rem; 
+        }
+        .report-heading-line { 
+            font-size: 1.05rem; 
+            font-weight: 800; 
+            color: #1e293b; 
+            margin-top: 1.25rem; 
+            margin-bottom: 0.5rem; 
+            text-align: left; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+        }
+        .report-heading-line::before { 
+            content: ""; 
+            display: inline-block; 
+            width: 4px; 
+            height: 16px; 
+            border-radius: 2px; 
+        }
         
-        .question-tag { font-family: monospace; font-weight: 800; color: #64748b; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; margin-right: 8px; }
+        /* 報告與標題點綴顏色設定 */
+        .report-heading-line::before { background: #9BADC1; }
+        .report-a .report-heading-line::before { background: #8697A8; }
+        .report-b .report-heading-line::before { background: #C49B9B; }
+
+        .report-bullet-line { 
+            color: #475569; 
+            line-height: 1.7; 
+            padding-left: 1.25rem; 
+            position: relative; 
+            text-align: left; 
+            margin-bottom: 0.25rem; 
+            font-size: 0.95rem;
+        }
+        .report-bullet-line::before { 
+            content: "•"; 
+            position: absolute; 
+            left: 0; 
+            font-weight: bold; 
+            color: #9BADC1;
+        }
+        .report-a .report-bullet-line::before { color: #8697A8; }
+        .report-b .report-bullet-line::before { color: #C49B9B; }
+        
+        .question-tag { 
+            font-family: monospace; 
+            font-weight: 800; 
+            color: #64748b; 
+            background: #f1f5f9; 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            font-size: 0.85rem; 
+            margin-right: 8px; 
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div class="max-w-7xl mx-auto text-center md:text-left">
-        <header class="flex flex-col md:flex-row justify-between items-center border-b-2 border-gray-100 pb-6 mb-8 gap-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- 頂部頁籤與標題 -->
+        <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b-2 border-gray-100 pb-6 mb-8 gap-6">
             <div>
-                <h1 class="text-3xl font-black text-gray-800 tracking-tight">EMI 學生素養分層分析儀表板</h1>
-                <p class="text-gray-500 font-medium mt-1">
-                    當前視角: <span id="view-title" class="text-[#9BADC1] font-bold underline decoration-4 underline-offset-8">Overall (全校整體)</span>
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">📊</span>
+                    <h1 class="text-3xl font-black text-gray-800 tracking-tight">EMI 學生素養數據整合分析儀表板</h1>
+                </div>
+                
+                <!-- 視角模式狀態提示 -->
+                <p class="text-gray-500 font-medium mt-2">
+                    當前視角: 
+                    <!-- 單一模式標籤 -->
+                    <span id="label-mode-single" class="inline">
+                        <span id="view-title-single" class="text-[#9BADC1] font-black underline decoration-4 underline-offset-8">Overall (全校整體)</span>
+                    </span>
+                    <!-- 對照模式標籤 -->
+                    <span id="label-mode-compare" class="hidden">
+                        <span class="text-[#8697A8] font-black underline decoration-2 underline-offset-4" id="view-title-a">Group A</span> 
+                        <span class="text-gray-400 mx-2">VS</span> 
+                        <span class="text-[#C49B9B] font-black underline decoration-2 underline-offset-4" id="view-title-b">Group B</span>
+                    </span>
                 </p>
-                <div class="flex items-center gap-2 mt-2 justify-center md:justify-start text-[11px] font-bold">
+                
+                <div class="flex items-center gap-2 mt-3 text-[11px] font-bold">
                     <span id="data-status-badge" class="text-green-600">● 雲端數據同步中</span>
                     <span class="text-gray-300 mx-1">|</span>
                     <p class="text-gray-400 italic">NTUST Office of Bilingual Education Initiatives</p>
                 </div>
             </div>
-            <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-                <div class="flex flex-col gap-1">
-                    <label class="text-[12px] font-bold text-gray-400 uppercase tracking-widest">學期</label>
-                    <select id="select-semester" class="bg-white border-2 border-gray-200 rounded-xl px-4 py-2 font-black text-gray-700 outline-none text-xl shadow-sm cursor-pointer hover:border-[#9BADC1] transition-colors">
-                        </select>
-                </div>
-                <div class="flex flex-col gap-1 min-w-[240px]">
-                    <label class="text-[12px] font-bold text-gray-400 uppercase tracking-widest">數據單位</label>
-                    <select id="select-college" class="w-full bg-white border-2 border-[#9BADC1] rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-[#9BADC1] outline-none font-black text-gray-700 text-xl transition-all cursor-pointer hover:bg-gray-50">
-                        </select>
-                </div>
+            
+            <!-- 整合模式切換與外連導覽 -->
+            <div class="flex flex-wrap gap-3">
+                <!-- 核心切換按鈕 -->
+                <button onclick="toggleDashboardMode()" id="btn-mode-toggle" class="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+                    <span id="toggle-icon">⚖️</span> <span id="toggle-text">開啟雙維度對照模式</span>
+                </button>
+                
+                <a href="https://sites.google.com/view/ntustemihelp/emi-%E6%95%99%E5%AD%B8%E7%AD%96%E7%95%A5" 
+                   target="_blank" rel="noopener noreferrer"
+                   class="px-5 py-2.5 bg-slate-700 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all shadow-sm flex items-center gap-2">
+                    <span>🌐</span> EMI 教學策略推薦網
+                </a>
             </div>
         </header>
 
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white border rounded-2xl p-5 shadow-sm border-t-4 border-t-[#8697A8]">
-                <p class="text-[14px] font-black text-gray-500 mb-2">有效問卷總數</p>
-                <p id="kpi-count" class="text-3xl font-black text-gray-800 tracking-tighter">0</p>
-            </div>
-            <div class="bg-white border rounded-2xl p-5 shadow-sm border-t-4 border-t-[#C49B9B]">
-                <p class="text-[14px] font-black text-gray-500 mb-2">海外讀書/工作意願</p>
-                <p id="kpi-oversea" class="text-3xl font-black text-gray-800 tracking-tighter">0</p>
-                <p id="sub-oversea" class="text-[12px] font-bold text-gray-400 mt-1">占比: 0%</p>
-            </div>
-            <div class="bg-white border rounded-2xl p-5 shadow-sm border-t-4 border-t-[#9F97B5]">
-                <p class="text-[14px] font-black text-gray-500 mb-2">EMI 增加出國信心</p>
-                <p id="kpi-confidence" class="text-3xl font-black text-gray-800 tracking-tighter">0</p>
-                <p id="sub-confidence" class="text-[12px] font-bold text-gray-400 mt-1">占比: 0%</p>
-            </div>
-            <div class="bg-white border rounded-2xl p-5 shadow-sm border-t-4 border-t-[#64748b]">
-                <p class="text-[14px] font-black text-gray-500 mb-2">性別分布 (女/男)</p>
-                <p id="kpi-gender" class="text-3xl font-black text-gray-800 tracking-tighter">0 / 0</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10 text-center text-white">
-            <div class="rounded-xl p-5 shadow-lg bg-[#8697A8]">
-                <span class="text-[15px] font-black opacity-95 uppercase block mb-2">自我調節學習</span>
-                <p id="score-srl" class="text-5xl font-black">0.0</p>
-                <div class="w-full bg-white bg-opacity-20 h-3 mt-3 rounded-full overflow-hidden">
-                    <div id="bar-srl" class="h-full bg-white opacity-60" style="width: 0%"></div>
+        <!-- ========================================== -->
+        <!-- 控制面板 A：單一模式選擇器 (預設顯示) -->
+        <!-- ========================================== -->
+        <div id="controls-single-panel" class="bg-white border rounded-2xl p-5 shadow-sm mb-8">
+            <span class="text-xs font-black text-slate-400 uppercase tracking-wider block mb-3">篩選分析維度 (單一單位)</span>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex flex-col gap-1 w-full md:w-1/3">
+                    <label class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">學期</label>
+                    <select id="select-semester" class="bg-slate-50 border border-gray-200 rounded-lg px-3 py-2 font-black text-gray-700 outline-none text-base cursor-pointer hover:border-[#9BADC1] transition-colors"></select>
                 </div>
-            </div>
-            <div class="rounded-xl p-5 shadow-lg bg-[#C49B9B]">
-                <span class="text-[15px] font-black opacity-95 uppercase block mb-2">學術英語&學科學習</span>
-                <p id="score-calp" class="text-5xl font-black">0.0</p>
-                <div class="w-full bg-white bg-opacity-20 h-3 mt-3 rounded-full overflow-hidden">
-                    <div id="bar-calp" class="h-full bg-white opacity-60" style="width: 0%"></div>
-                </div>
-            </div>
-            <div class="rounded-xl p-5 shadow-lg bg-[#9F97B5]">
-                <span class="text-[15px] font-black opacity-95 uppercase block mb-2">Bloom認知</span>
-                <p id="score-cog" class="text-5xl font-black">0.0</p>
-                <div class="w-full bg-white bg-opacity-20 h-3 mt-3 rounded-full overflow-hidden">
-                    <div id="bar-cog" class="h-full bg-white opacity-60" style="width: 0%"></div>
-                </div>
-            </div>
-            <div class="rounded-xl p-5 shadow-lg bg-[#E2B4BD]">
-                <span class="text-[15px] font-black opacity-95 uppercase block mb-2">課程參與</span>
-                <p id="score-eng" class="text-5xl font-black">0.0</p>
-                <div class="w-full bg-white bg-opacity-20 h-3 mt-3 rounded-full overflow-hidden">
-                    <div id="bar-eng" class="h-full bg-white opacity-60" style="width: 0%"></div>
-                </div>
-            </div>
-            <div class="rounded-xl p-5 shadow-lg bg-[#8697A8]">
-                <span class="text-[15px] font-black opacity-95 uppercase block mb-2">自我效能</span>
-                <p id="score-se" class="text-5xl font-black">0.0</p>
-                <div class="w-full bg-white bg-opacity-20 h-3 mt-3 rounded-full overflow-hidden">
-                    <div id="bar-se" class="h-full bg-white opacity-60" style="width: 0%"></div>
+                <div class="flex flex-col gap-1 w-full md:w-2/3">
+                    <label class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">數據單位</label>
+                    <select id="select-college" class="bg-slate-50 border border-gray-200 rounded-lg px-3 py-2 font-black text-gray-700 outline-none text-base cursor-pointer hover:border-[#9BADC1] transition-colors"></select>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-10">
-            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-                <h3 class="text-2xl font-black text-gray-700 mb-8 border-l-8 border-[#9BADC1] pl-4">學生背景資料分佈</h3>
-                <div id="distribution-container" class="space-y-12">
+        <!-- ========================================== -->
+        <!-- 控制面板 B：對照模式選擇器 (預設隱藏) -->
+        <!-- ========================================== -->
+        <div id="controls-compare-panel" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- 對照組 A 選擇器 -->
+            <div class="bg-white border-2 border-[#8697A8] rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-2 h-full bg-[#8697A8]"></div>
+                <div class="pl-4">
+                    <span class="text-xs font-black text-[#8697A8] uppercase tracking-wider block mb-2">●對照組 A (標準藍灰)</span>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">學期 A</label>
+                            <select id="select-semester-a" class="w-full bg-slate-50 border border-gray-200 rounded-lg px-3 py-2 font-black text-gray-700 outline-none text-base cursor-pointer hover:border-[#8697A8] transition-colors"></select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">數據單位 A</label>
+                            <select id="select-college-a" class="w-full bg-slate-50 border border-gray-200 rounded-lg px-3 py-2 font-black text-gray-700 outline-none text-base cursor-pointer hover:border-[#8697A8] transition-colors"></select>
+                        </div>
                     </div>
+                </div>
             </div>
 
-            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center">
-                <h3 id="radar-title" class="text-2xl font-black text-gray-700 mb-8">素養評分雷達</h3>
-                <div class="h-96 w-full relative">
-                    <canvas id="radarChart"></canvas>
+            <!-- 對照組 B 選擇器 -->
+            <div class="bg-white border-2 border-[#C49B9B] rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-2 h-full bg-[#C49B9B]"></div>
+                <div class="pl-4">
+                    <span class="text-xs font-black text-[#C49B9B] uppercase tracking-wider block mb-2">●對照組 B (玫瑰粉褐)</span>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">學期 B</label>
+                            <select id="select-semester-b" class="w-full bg-slate-50 border border-gray-200 rounded-lg px-3 py-2 font-black text-gray-700 outline-none text-base cursor-pointer hover:border-[#C49B9B] transition-colors"></select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">數據單位 B</label>
+                            <select id="select-college-b" class="w-full bg-slate-50 border border-gray-200 rounded-lg px-3 py-2 font-black text-gray-700 outline-none text-base cursor-pointer hover:border-[#C49B9B] transition-colors"></select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white p-10 rounded-3xl shadow-sm border border-gray-100 mb-10 text-center">
-            <h3 class="text-3xl font-black text-gray-700 mb-12 uppercase tracking-widest">EMI 課堂教學活動占比分布 (%)</h3>
-            <div class="h-96 w-full relative">
-                <canvas id="activityChart"></canvas>
+        <!-- ========================================== -->
+        <!-- KPI 數據卡片區 (動態呈現 A/B 對照 或 單一數據) -->
+        <!-- ========================================== -->
+        <div id="kpi-panel" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <!-- 卡片 1: 有效問卷總數 -->
+            <div class="bg-white border rounded-2xl p-5 shadow-sm border-t-4 border-t-slate-500">
+                <p class="text-[13px] font-black text-gray-400 mb-2 uppercase tracking-wider">有效問卷總數</p>
+                
+                <!-- 單一顯示 -->
+                <p id="kpi-count" class="kpi-single text-3xl font-black text-gray-800 tracking-tighter">0</p>
+                
+                <!-- 對照顯示 -->
+                <div class="kpi-compare hidden grid grid-cols-2 gap-2 border-t pt-2 border-dashed">
+                    <div class="border-r border-slate-100 pr-1">
+                        <span class="text-[9px] font-bold text-[#8697A8] block">Group A</span>
+                        <span id="kpi-count-a" class="text-xl font-black text-gray-800">0</span>
+                    </div>
+                    <div class="pl-2">
+                        <span class="text-[9px] font-bold text-[#C49B9B] block">Group B</span>
+                        <span id="kpi-count-b" class="text-xl font-black text-gray-800">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片 2: 海外讀書/工作意願 -->
+            <div class="bg-white border rounded-2xl p-5 shadow-sm border-t-4 border-t-[#C49B9B]">
+                <p class="text-[13px] font-black text-gray-400 mb-2 uppercase tracking-wider">海外讀書/工作意願</p>
+                
+                <!-- 單一顯示 -->
+                <div class="kpi-single">
+                    <p id="kpi-oversea" class="text-3xl font-black text-gray-800 tracking-tighter">0</p>
+                    <p id="sub-oversea" class="text-[12px] font-bold text-gray-400 mt-1">占比: 0%</p>
+                </div>
+                
+                <!-- 對照顯示 -->
+                <div class="kpi-compare hidden grid grid-cols-2 gap-1 border-t pt-2 border-dashed">
+                    <div class="border-r border-slate-100 pr-1">
+                        <span class="text-[9px] font-bold text-[#8697A8] block">Group A</span>
+                        <span id="kpi-oversea-a" class="text-base font-black text-gray-800">0</span>
+                        <span id="sub-oversea-a" class="text-[10px] font-bold text-gray-400 block">0%</span>
+                    </div>
+                    <div class="pl-2">
+                        <span class="text-[9px] font-bold text-[#C49B9B] block">Group B</span>
+                        <span id="kpi-oversea-b" class="text-base font-black text-gray-800">0</span>
+                        <span id="sub-oversea-b" class="text-[10px] font-bold text-gray-400 block">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片 3: EMI 增加出國信心 -->
+            <div class="bg-white border rounded-2xl p-5 shadow-sm border-t-4 border-t-[#9F97B5]">
+                <p class="text-[13px] font-black text-gray-400 mb-2 uppercase tracking-wider">EMI 增加出國信心</p>
+                
+                <!-- 單一顯示 -->
+                <div class="kpi-single">
+                    <p id="kpi-confidence" class="text-3xl font-black text-gray-800 tracking-tighter">0</p>
+                    <p id="sub-confidence" class="text-[12px] font-bold text-gray-400 mt-1">占比: 0%</p>
+                </div>
+                
+                <!-- 對照顯示 -->
+                <div class="kpi-compare hidden grid grid-cols-2 gap-1 border-t pt-2 border-dashed">
+                    <div class="border-r border-slate-100 pr-1">
+                        <span class="text-[9px] font-bold text-[#8697A8] block">Group A</span>
+                        <span id="kpi-confidence-a" class="text-base font-black text-gray-800">0</span>
+                        <span id="sub-confidence-a" class="text-[10px] font-bold text-gray-400 block">0%</span>
+                    </div>
+                    <div class="pl-2">
+                        <span class="text-[9px] font-bold text-[#C49B9B] block">Group B</span>
+                        <span id="kpi-confidence-b" class="text-base font-black text-gray-800">0</span>
+                        <span id="sub-confidence-b" class="text-[10px] font-bold text-gray-400 block">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡片 4: 性別分布 -->
+            <div class="bg-white border rounded-2xl p-5 shadow-sm border-t-4 border-t-slate-400">
+                <p class="text-[13px] font-black text-gray-400 mb-2 uppercase tracking-wider">性別分布 (女/男)</p>
+                
+                <!-- 單一顯示 -->
+                <p id="kpi-gender" class="kpi-single text-3xl font-black text-gray-800 tracking-tighter">0 / 0</p>
+                
+                <!-- 對照顯示 -->
+                <div class="kpi-compare hidden grid grid-cols-2 gap-1 border-t pt-2 border-dashed">
+                    <div class="border-r border-slate-100 pr-1">
+                        <span class="text-[9px] font-bold text-[#8697A8] block">Group A</span>
+                        <span id="kpi-gender-a" class="text-sm font-black text-gray-800 block">0 / 0</span>
+                    </div>
+                    <div class="pl-2">
+                        <span class="text-[9px] font-bold text-[#C49B9B] block">Group B</span>
+                        <span id="kpi-gender-b" class="text-sm font-black text-gray-800 block">0 / 0</span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="bg-white border rounded-3xl p-8 shadow-sm mb-10">
-            <h3 class="text-2xl font-black text-gray-700 mb-8 border-l-8 border-[#B9B1D2] pl-4 text-sm">30 項測量細項詳細平均分趨勢</h3>
-            <div class="h-80 w-full relative">
-                <canvas id="trendChart"></canvas>
+        <!-- ========================================== -->
+        <!-- 5 大核心指標分數顯示區 -->
+        <!-- ========================================== -->
+        <!-- A. 原本的單向分數卡片 (單一視角顯示) -->
+        <div id="scores-single-view" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10 text-center text-white">
+            <div class="rounded-xl p-5 shadow-md bg-[#8697A8]">
+                <span class="text-[13px] font-black opacity-95 uppercase block mb-1">自我調節學習</span>
+                <p id="score-srl" class="text-4xl font-black">0.0</p>
+                <div class="w-full bg-white bg-opacity-20 h-2.5 mt-3 rounded-full overflow-hidden">
+                    <div id="bar-srl" class="h-full bg-white opacity-70" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="rounded-xl p-5 shadow-md bg-[#C49B9B]">
+                <span class="text-[13px] font-black opacity-95 uppercase block mb-1">學術英語&學科學習</span>
+                <p id="score-calp" class="text-4xl font-black">0.0</p>
+                <div class="w-full bg-white bg-opacity-20 h-2.5 mt-3 rounded-full overflow-hidden">
+                    <div id="bar-calp" class="h-full bg-white opacity-70" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="rounded-xl p-5 shadow-md bg-[#9F97B5]">
+                <span class="text-[13px] font-black opacity-95 uppercase block mb-1">Bloom認知層級</span>
+                <p id="score-cog" class="text-4xl font-black">0.0</p>
+                <div class="w-full bg-white bg-opacity-20 h-2.5 mt-3 rounded-full overflow-hidden">
+                    <div id="bar-cog" class="h-full bg-white opacity-70" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="rounded-xl p-5 shadow-md bg-[#E2B4BD]">
+                <span class="text-[13px] font-black opacity-95 uppercase block mb-1">課程參與</span>
+                <p id="score-eng" class="text-4xl font-black">0.0</p>
+                <div class="w-full bg-white bg-opacity-20 h-2.5 mt-3 rounded-full overflow-hidden">
+                    <div id="bar-eng" class="h-full bg-white opacity-70" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="rounded-xl p-5 shadow-md bg-[#8697A8]">
+                <span class="text-[13px] font-black opacity-95 uppercase block mb-1">自我效能</span>
+                <p id="score-se" class="text-4xl font-black">0.0</p>
+                <div class="w-full bg-white bg-opacity-20 h-2.5 mt-3 rounded-full overflow-hidden">
+                    <div id="bar-se" class="h-full bg-white opacity-70" style="width: 0%"></div>
+                </div>
             </div>
         </div>
 
-        <div class="mt-8 mb-10 bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-            <div class="flex items-center gap-3 mb-8 text-left">
-                <div class="p-2 bg-slate-100 rounded-lg text-lg">📋</div>
-                <h3 class="text-2xl font-black text-gray-800">30 項測量細項：題項對照表</h3>
+        <!-- B. 新對照組分數卡片 (對照視角顯示) -->
+        <div id="scores-compare-view" class="hidden bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-10">
+            <span class="text-xs font-black text-slate-400 uppercase tracking-wider block mb-4">核心素養指標平均得分對照 (5分制)</span>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 text-center">
+                
+                <!-- SRL -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                    <span class="text-sm font-black text-slate-600 block mb-3">自我調節學習</span>
+                    <div class="flex justify-around items-center mb-2">
+                        <div>
+                            <span class="text-[10px] text-[#8697A8] font-bold block">A</span>
+                            <span id="score-srl-a" class="text-2xl font-black text-[#8697A8]">0.0</span>
+                        </div>
+                        <div class="h-6 w-px bg-slate-200"></div>
+                        <div>
+                            <span class="text-[10px] text-[#C49B9B] font-bold block">B</span>
+                            <span id="score-srl-b" class="text-2xl font-black text-[#C49B9B]">0.0</span>
+                        </div>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden flex">
+                        <div id="bar-srl-a" class="h-full bg-[#8697A8]" style="width: 0%"></div>
+                        <div id="bar-srl-b" class="h-full bg-[#C49B9B]" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- CALP -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                    <span class="text-xs font-black text-slate-600 block mb-3">學術英語&學科學習</span>
+                    <div class="flex justify-around items-center mb-2">
+                        <div>
+                            <span class="text-[10px] text-[#8697A8] font-bold block">A</span>
+                            <span id="score-calp-a" class="text-2xl font-black text-[#8697A8]">0.0</span>
+                        </div>
+                        <div class="h-6 w-px bg-slate-200"></div>
+                        <div>
+                            <span class="text-[10px] text-[#C49B9B] font-bold block">B</span>
+                            <span id="score-calp-b" class="text-2xl font-black text-[#C49B9B]">0.0</span>
+                        </div>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden flex">
+                        <div id="bar-calp-a" class="h-full bg-[#8697A8]" style="width: 0%"></div>
+                        <div id="bar-calp-b" class="h-full bg-[#C49B9B]" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- COGNITION -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                    <span class="text-sm font-black text-slate-600 block mb-3">Bloom認知層級</span>
+                    <div class="flex justify-around items-center mb-2">
+                        <div>
+                            <span class="text-[10px] text-[#8697A8] font-bold block">A</span>
+                            <span id="score-cog-a" class="text-2xl font-black text-[#8697A8]">0.0</span>
+                        </div>
+                        <div class="h-6 w-px bg-slate-200"></div>
+                        <div>
+                            <span class="text-[10px] text-[#C49B9B] font-bold block">B</span>
+                            <span id="score-cog-b" class="text-2xl font-black text-[#C49B9B]">0.0</span>
+                        </div>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden flex">
+                        <div id="bar-cog-a" class="h-full bg-[#8697A8]" style="width: 0%"></div>
+                        <div id="bar-cog-b" class="h-full bg-[#C49B9B]" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- ENGAGEMENT -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                    <span class="text-sm font-black text-slate-600 block mb-3">課程參與</span>
+                    <div class="flex justify-around items-center mb-2">
+                        <div>
+                            <span class="text-[10px] text-[#8697A8] font-bold block">A</span>
+                            <span id="score-eng-a" class="text-2xl font-black text-[#8697A8]">0.0</span>
+                        </div>
+                        <div class="h-6 w-px bg-slate-200"></div>
+                        <div>
+                            <span class="text-[10px] text-[#C49B9B] font-bold block">B</span>
+                            <span id="score-eng-b" class="text-2xl font-black text-[#C49B9B]">0.0</span>
+                        </div>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden flex">
+                        <div id="bar-eng-a" class="h-full bg-[#8697A8]" style="width: 0%"></div>
+                        <div id="bar-eng-b" class="h-full bg-[#C49B9B]" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- SELF-EFFICACY -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                    <span class="text-sm font-black text-slate-600 block mb-3">自我效能</span>
+                    <div class="flex justify-around items-center mb-2">
+                        <div>
+                            <span class="text-[10px] text-[#8697A8] font-bold block">A</span>
+                            <span id="score-se-a" class="text-2xl font-black text-[#8697A8]">0.0</span>
+                        </div>
+                        <div class="h-6 w-px bg-slate-200"></div>
+                        <div>
+                            <span class="text-[10px] text-[#C49B9B] font-bold block">B</span>
+                            <span id="score-se-b" class="text-2xl font-black text-[#C49B9B]">0.0</span>
+                        </div>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden flex">
+                        <div id="bar-se-a" class="h-full bg-[#8697A8]" style="width: 0%"></div>
+                        <div id="bar-se-b" class="h-full bg-[#C49B9B]" style="width: 0%"></div>
+                    </div>
+                </div>
+
             </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 圖表與背景呈現區域 A：單一模式專屬板塊 (切換時完全整組隱藏) -->
+        <!-- ========================================================= -->
+        <div id="charts-single-view" class="space-y-8">
+            <!-- 學生背景與雷達圖區 (左右排版) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- 學生背景資料分布 -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-xl font-black text-gray-700 mb-6 border-l-4 border-[#8697A8] pl-3">學生背景資料分布</h3>
+                        <div id="distribution-single-container" class="space-y-6"></div>
+                    </div>
+                </div>
+
+                <!-- 雷達圖卡片 -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
+                    <h3 class="text-xl font-black text-gray-700 mb-6 text-center">核心素養評分雷達圖</h3>
+                    <div class="h-80 w-full relative">
+                        <canvas id="radarChart" class="w-full h-full"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EMI 課堂教學活動占比圖 -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <h3 class="text-xl font-black text-gray-700 mb-6 text-left border-l-4 border-[#9BADC1] pl-3">EMI 課堂教學活動占比分布 (%)</h3>
+                <div class="h-80 w-full relative">
+                    <canvas id="activityChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+
+            <!-- 30 項測量細項詳細平均分趨勢 -->
+            <div class="bg-white border rounded-2xl p-6 shadow-sm">
+                <h3 class="text-xl font-black text-gray-700 mb-6 border-l-4 border-[#B9B1D2] pl-3">30 項測量細項詳細平均分趨勢</h3>
+                <div class="h-80 w-full relative">
+                    <canvas id="trendChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 圖表與背景呈現區域 B：對照模式專屬板塊 (預設完全隱藏，切換才顯示) -->
+        <!-- ========================================================= -->
+        <div id="charts-compare-view" class="hidden space-y-8">
+            <!-- 學生背景與雷達圖區 (左右排版) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- 學生背景資料分布對照 -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-xl font-black text-gray-700 mb-6 border-l-4 border-[#8697A8] pl-3">學生背景資料分布 (Group A vs Group B)</h3>
+                        <div id="distribution-compare-container" class="space-y-6"></div>
+                    </div>
+                </div>
+
+                <!-- 雷達圖卡片對照 -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
+                    <h3 class="text-xl font-black text-gray-700 mb-6 text-center">雙組核心素養對照雷達圖</h3>
+                    <div class="h-80 w-full relative">
+                        <canvas id="comparisonRadarChart" class="w-full h-full"></canvas>
+                    </div>
+                    <div class="flex gap-4 mt-3 text-xs font-bold">
+                        <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#8697A8]"></span> Group A</div>
+                        <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#C49B9B]"></span> Group B</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EMI 課堂教學活動占比對照圖 -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <h3 class="text-xl font-black text-gray-700 mb-6 text-left border-l-4 border-[#9BADC1] pl-3">EMI 課堂教學活動占比對照 (%)</h3>
+                <div class="h-80 w-full relative">
+                    <canvas id="comparisonActivityChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+
+            <!-- 30 項測量細項詳細平均分趨勢對照 -->
+            <div class="bg-white border rounded-2xl p-6 shadow-sm">
+                <h3 class="text-xl font-black text-gray-700 mb-6 border-l-4 border-[#B9B1D2] pl-3">30 項測量細項詳細平均分趨勢對照</h3>
+                <div class="h-80 w-full relative">
+                    <canvas id="comparisonTrendChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- 30 項測量細項對照表 (維持收摺功能) -->
+        <!-- ========================================== -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mt-8 mb-8">
+            <button onclick="toggleMapping()" class="flex w-full items-center justify-between hover:bg-slate-50 p-2 rounded-xl transition-all">
+                <div class="flex items-center gap-3 text-left">
+                    <span class="text-xl">📋</span>
+                    <div>
+                        <h3 class="text-xl font-black text-gray-800">30 項測量細項：題項對照表</h3>
+                        <p class="text-xs text-gray-400">點擊展開或收合詳細評分題項指標對照</p>
+                    </div>
+                </div>
+                <div id="mapping-arrow" class="text-slate-400 transition-transform duration-300">▼</div>
+            </button>
             
-            <div id="question-mapping-container" class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10 text-left">
-                </div>
-            <div class="mt-10 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center">
-                <p class="text-xs font-bold text-gray-400 italic">Reference guide for interpreting the detailed average score trends across 30 metrics.</p>
+            <div id="question-mapping-block" class="hidden mt-6 pt-6 border-t border-slate-100">
+                <div id="question-mapping-container" class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10 text-left"></div>
             </div>
         </div>
 
-        <div class="mt-16 text-center">
-            <a href="https://sites.google.com/view/ntustemihelp/emi-%E6%95%99%E5%AD%B8%E7%AD%96%E7%95%A5" 
-               target="_blank" rel="noopener noreferrer"
-               class="inline-flex items-center gap-3 px-10 py-5 bg-[#8697A8] text-white rounded-full font-black text-2xl hover:bg-[#6e7d8c] transition-all shadow-md hover:shadow-2xl transform hover:-translate-y-1">
-                <span>🌐</span> 前往：EMI 教學策略推薦 (教學支援網)
-            </a>
-        </div>
-
-        <div class="mt-8 mb-12 overflow-hidden rounded-3xl border-2 border-dashed border-[#9BADC1] bg-white shadow-sm">
-            <button onclick="toggleReport()" class="flex w-full flex-col items-center justify-between gap-4 p-6 hover:bg-slate-50 transition-colors md:flex-row">
+        <!-- ========================================== -->
+        <!-- AI 智能診斷報告區域 -->
+        <!-- ========================================== -->
+        <!-- 1. 原單向 AI 診斷報告 (單一視角顯示) -->
+        <div id="ai-single-view" class="overflow-hidden rounded-2xl border-2 border-dashed border-[#9BADC1] bg-white shadow-sm mb-8">
+            <button onclick="toggleReportSingle()" class="flex w-full flex-col items-center justify-between gap-4 p-6 hover:bg-slate-50 transition-colors md:flex-row">
                 <div class="text-left flex items-center gap-4">
                     <span class="text-2xl">✨</span>
                     <div>
@@ -169,31 +572,103 @@
                         <p class="text-sm font-medium text-gray-400">點擊展開針對當前單位的數據深度分析報告</p>
                     </div>
                 </div>
-                <div id="report-arrow" class="text-slate-400 transition-transform duration-300">▼</div>
+                <div id="report-single-arrow" class="text-slate-400 transition-transform duration-300">▼</div>
             </button>
-            <div id="report-block" class="hidden border-t border-dashed border-slate-100 p-8 pt-6 text-left">
+            <div id="report-single-block" class="hidden border-t border-dashed border-slate-100 p-8 pt-6 text-left">
                 <div id="report-content" class="report-content"></div>
             </div>
         </div>
 
-        <footer class="mt-12 pt-8 border-t-4 border-gray-100 text-center text-xs font-black text-gray-300 uppercase tracking-[0.6em]">
+        <!-- 2. 新對照組雙向 AI 診斷報告 (對照視角顯示) -->
+        <div id="ai-compare-view" class="hidden overflow-hidden rounded-2xl border-2 border-dashed border-[#9BADC1] bg-white shadow-sm mb-8">
+            <button onclick="toggleReportCompare()" class="flex w-full flex-col items-center justify-between gap-4 p-6 hover:bg-slate-50 transition-colors md:flex-row">
+                <div class="text-left flex items-center gap-4">
+                    <span class="text-2xl">✨</span>
+                    <div>
+                        <h3 class="text-xl font-black text-gray-800 flex items-center gap-2">AI 雙向智能診斷對照報告</h3>
+                        <p class="text-sm font-medium text-gray-400">點擊展開對照組 A 與對照組 B 的深度診斷洞察報告</p>
+                    </div>
+                </div>
+                <div id="report-compare-arrow" class="text-slate-400 transition-transform duration-300">▼</div>
+            </button>
+            
+            <div id="report-compare-block" class="hidden border-t border-dashed border-slate-100 p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- A 組報告 -->
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-100 report-a">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="px-2.5 py-1 bg-[#8697A8] text-white font-black text-xs rounded-full">Group A 報告</span>
+                            <span id="report-a-title-badge" class="text-sm font-bold text-gray-600"></span>
+                        </div>
+                        <div id="report-content-a" class="report-content"></div>
+                    </div>
+
+                    <!-- B 組報告 -->
+                    <div class="bg-slate-50 p-5 rounded-xl border border-slate-100 report-b">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="px-2.5 py-1 bg-[#C49B9B] text-white font-black text-xs rounded-full">Group B 報告</span>
+                            <span id="report-b-title-badge" class="text-sm font-bold text-gray-600"></span>
+                        </div>
+                        <div id="report-content-b" class="report-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-12 pt-8 border-t-4 border-gray-100 text-center text-xs font-black text-gray-300 uppercase tracking-[0.4em] mb-12">
             FACILITATED BY NTUST Office of Bilingual Education Initiatives
         </footer>
     </div>
 
+    <!-- ========================================== -->
+    <!-- JAVASCRIPT LOGIC -->
+    <!-- ========================================== -->
     <script>
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTy12Shjgj-hZxrYZiQV8MDYzfe7ZkDD9z4c2UmEOZK_bSLfAv8ZRitdFZpAuvq4GnpQU_qj-RP3z_K/pub?gid=1366984866&single=true&output=csv";
         const PREFERRED_ORDER = ['Overall (全校整體)', '工程學院', '電資學院', '管理學院', '應科學院', '設計學院', '人文學院', '產創學院', '通識中心'];
 
-        const fallbackData = [{ 
-            學期: "114-1", 單位: "Overall (全校整體)", 人數: 3340, 海外意願人數: 2871, 信心增加人數: 2405, 女性人數: 1101, 男性人數: 2239, 第一次修EMI人數: 1365, 非第一次修EMI人數: 1975, 
-            自我調節學習: 3.8, "學術英語&學科學習": 3.6, Bloom認知: 3.8, 課程參與: 3.7, 自我效能: 3.8, 教師講授: 44, 師生互動: 21, 生生互動: 16, 學生報告: 15, 其他: 14,
-            AI報告標題: "114-1 學期 全校 EMI 教學數據洞察報告",
-            AI報告內容: "1. 現況總結\n目前全校平衡發展中。\n\n2. 關鍵優勢\n海外移動力強。",
-            SRL1:3.8, SRL2:3.7, SRL3:3.8, SRL4:3.9, SRL5:3.8, CALP1:3.6, CALP2:3.7, CALP3:3.5, CALP4:3.6, CALP5:3.6, CALP6:3.7,
-            Cog1:3.8, Cog2:3.8, Cog3:3.9, Cog4:3.7, Cog5:3.7, Cog6:3.6, Eng1:3.7, Eng2:3.8, Eng3:3.7, Eng4:3.5, Eng5:3.9, Eng6:3.8, Eng7:3.8,
-            SE1:3.9, SE2:3.8, SE3:3.6, SE4:3.9, SE5:3.7, SE6:3.8
-        }];
+        // 當前模式狀態: 'single' (單一模式) 或 'compare' (對照模式)
+        let currentMode = 'single';
+
+        // 豐富的 Fallback 數據機制 (保留多學院多學期數據，確保測試與離線對照完美運行)
+        const fallbackData = [
+            { 
+                學期: "114-1", 單位: "Overall (全校整體)", 人數: 3340, 海外意願人數: 2871, 信心增加人數: 2405, 女性人數: 1101, 男性人數: 2239, 第一次修EMI人數: 1365, 非第一次修EMI人數: 1975, 
+                自我調節學習: 3.8, "學術英語&學科學習": 3.6, Bloom認知: 3.8, 課程參與: 3.7, 自我效能: 3.8, 教師講授: 44, 師生互動: 21, 生生互動: 16, 學生報告: 15, 其他: 14,
+                AI報告標題: "114-1 全校整體 EMI 數據洞察",
+                AI報告內容: "1. 現況總結\n全校EMI課程推動成效穩定。\n\n2. 關鍵優勢\n學生海外就業意願極高 (86%)。\n\n3. 建議策略\n建議加強口頭報告機會。",
+                SRL1:3.8, SRL2:3.7, SRL3:3.8, SRL4:3.9, SRL5:3.8, CALP1:3.6, CALP2:3.7, CALP3:3.5, CALP4:3.6, CALP5:3.6, CALP6:3.7,
+                Cog1:3.8, Cog2:3.8, Cog3:3.9, Cog4:3.7, Cog5:3.7, Cog6:3.6, Eng1:3.7, Eng2:3.8, Eng3:3.7, Eng4:3.5, Eng5:3.9, Eng6:3.8, Eng7:3.8,
+                SE1:3.9, SE2:3.8, SE3:3.6, SE4:3.9, SE5:3.7, SE6:3.8
+            },
+            { 
+                學期: "114-1", 單位: "工程學院", 人數: 1200, 海外意願人數: 980, 信心增加人數: 850, 女性人數: 300, 男性人數: 900, 第一次修EMI人數: 550, 非第一次修EMI人數: 650, 
+                自我調節學習: 3.5, "學術英語&學科學習": 3.4, Bloom認知: 3.6, 課程參與: 3.4, 自我效能: 3.5, 教師講授: 55, 師生互動: 15, 生生互動: 12, 學生報告: 10, 其他: 8,
+                AI報告標題: "114-1 工程學院 數據洞察",
+                AI報告內容: "1. 現況總結\n工程學院教師講授比例較高 (55%)。\n\n2. 關鍵優勢\n學業自我調節表現尚可。\n\n3. 建議策略\n加強課堂互動及生生討論。",
+                SRL1:3.5, SRL2:3.4, SRL3:3.5, SRL4:3.6, SRL5:3.5, CALP1:3.4, CALP2:3.4, CALP3:3.3, CALP4:3.5, CALP5:3.4, CALP6:3.4,
+                Cog1:3.6, Cog2:3.6, Cog3:3.7, Cog4:3.5, Cog5:3.5, Cog6:3.4, Eng1:3.4, Eng2:3.5, Eng3:3.4, Eng4:3.2, Eng5:3.5, Eng6:3.4, Eng7:3.5,
+                SE1:3.6, SE2:3.5, SE3:3.4, SE4:3.6, SE5:3.4, SE6:3.5
+            },
+            { 
+                學期: "113-2", 單位: "Overall (全校整體)", 人數: 3100, 海外意願人數: 2550, 信心增加人數: 2150, 女性人數: 1020, 男性人數: 2080, 第一次修EMI人數: 1400, 非第一次修EMI人數: 1700, 
+                自我調節學習: 3.7, "學術英語&學科學習": 3.5, Bloom認知: 3.7, 課程參與: 3.6, 自我效能: 3.7, 教師講授: 46, 師生互動: 20, 生生互動: 15, 學生報告: 12, 其他: 7,
+                AI報告標題: "113-2 全校整體 數據回顧",
+                AI報告內容: "1. 現況總結\n前一學期表現良好，課程信心正在逐年建立。\n\n2. 關鍵優勢\n學生自我效能與對外信心有顯著關聯。",
+                SRL1:3.7, SRL2:3.6, SRL3:3.7, SRL4:3.8, SRL5:3.7, CALP1:3.5, CALP2:3.6, CALP3:3.4, CALP4:3.5, CALP5:3.5, CALP6:3.6,
+                Cog1:3.7, Cog2:3.7, Cog3:3.8, Cog4:3.6, Cog5:3.6, Cog6:3.5, Eng1:3.6, Eng2:3.7, Eng3:3.6, Eng4:3.4, Eng5:3.7, Eng6:3.6, Eng7:3.7,
+                SE1:3.8, SE2:3.7, SE3:3.5, SE4:3.8, SE5:3.6, SE6:3.7
+            },
+            { 
+                學期: "113-2", 單位: "管理學院", 人數: 850, 海外意願人數: 790, 信心增加人數: 710, 女性人數: 510, 男性人數: 340, 第一次修EMI人數: 250, 非第一次修EMI人數: 600, 
+                自我調節學習: 4.1, "學術英語&學科學習": 3.9, Bloom認知: 4.0, 課程參與: 4.1, 自我效能: 4.1, 教師講授: 35, 師生互動: 25, 生生互動: 22, 學生報告: 12, 其他: 6,
+                AI報告標題: "113-2 管理學院 卓越數據洞察",
+                AI報告內容: "1. 現況總結\n管院學生在EMI口語與交流能力表現極其突出。\n\n2. 關鍵優勢\n各項自我調節、投入及效能評分均高達 4.1。\n\n3. 建議策略\n可持續作為典範單位推廣互動教學法。",
+                SRL1:4.1, SRL2:4.0, SRL3:4.1, SRL4:4.2, SRL5:4.1, CALP1:3.9, CALP2:4.0, CALP3:3.8, CALP4:3.9, CALP5:3.9, CALP6:4.0,
+                Cog1:4.0, Cog2:4.0, Cog3:4.1, Cog4:3.9, Cog5:3.9, Cog6:3.8, Eng1:4.1, Eng2:4.2, Eng3:4.1, Eng4:3.9, Eng5:4.2, Eng6:4.1, Eng7:4.2,
+                SE1:4.2, SE2:4.1, SE3:3.9, SE4:4.2, SE5:4.0, SE6:4.1
+            }
+        ];
 
         const QUESTION_MAPPING = [
             { category: "自我調節學習技能 (SRL)", color: "#8697A8", items: [{ id: "SRL1", text: "I set specific goals for my learning." }, { id: "SRL2", text: "I employed strategies (e.g. mind maps) to reach my learning goals." }, { id: "SRL3", text: "I kept track of my learning progress." }, { id: "SRL4", text: "I reflected on my learning difficulties." }, { id: "SRL5", text: "I adjusted my study strategies based on my performance." }] },
@@ -204,7 +679,86 @@
         ];
 
         let allRows = fallbackData;
-        let chartRadar, chartActivity, chartTrend;
+        
+        // 圖表物件追蹤
+        let chartRadarSingle, chartActivitySingle, chartTrendSingle;
+        let chartRadarCompare, chartActivityCompare, chartTrendCompare;
+
+        // ==========================================
+        // 🔮 核心優化：模糊欄位匹配引擎
+        // ==========================================
+        function getStrField(row, possibleKeys, fallbackVal = "") {
+            if (!row) return fallbackVal;
+            const keys = Object.keys(row);
+            for (let pk of possibleKeys) {
+                if (row[pk] !== undefined && row[pk] !== null) {
+                    return String(row[pk]).trim();
+                }
+                const normPk = pk.toLowerCase().replace(/\s+/g, '');
+                for (let k of keys) {
+                    if (k.toLowerCase().replace(/\s+/g, '') === normPk) {
+                        return String(row[k]).trim();
+                    }
+                }
+            }
+            return fallbackVal;
+        }
+
+        function getNumField(row, possibleKeys, fallbackVal = 0) {
+            const strVal = getStrField(row, possibleKeys, null);
+            if (strVal === null) return fallbackVal;
+            const parsed = parseFloat(strVal);
+            return isNaN(parsed) ? fallbackVal : parsed;
+        }
+
+        function getMetricValue(row, key, fallbackVal = 0) {
+            if (!row) return fallbackVal;
+            if (row[key] !== undefined && row[key] !== null) {
+                return parseFloat(row[key]) || fallbackVal;
+            }
+            const normKey = key.toLowerCase();
+            for (let k in row) {
+                if (k.toLowerCase().trim() === normKey) {
+                    return parseFloat(row[k]) || fallbackVal;
+                }
+            }
+            return fallbackVal;
+        }
+
+        function getAIField(row, type) {
+            if (!row) return "";
+            const keys = Object.keys(row);
+            if (type === 'title') {
+                const exacts = ['AI報告標題', 'AI 報告標題', 'AI智能診斷報告標題', 'AI報告標題(選填)', 'ReportTitle', 'AI_Title'];
+                for (let ek of exacts) {
+                    if (row[ek] !== undefined && row[ek] !== null && String(row[ek]).trim() !== "") {
+                        return String(row[ek]).trim();
+                    }
+                }
+                for (let k of keys) {
+                    const norm = k.toLowerCase().replace(/\s+/g, '');
+                    if (norm.includes('ai') && norm.includes('標題')) {
+                        return String(row[k]).trim();
+                    }
+                }
+            } else if (type === 'content') {
+                const exacts = ['AI報告內容', 'AI 報告內容', 'AI智能診斷報告內容', 'AI報告內容(選填)', 'ReportContent', 'AI_Content', 'AI報告', 'AI智能診斷報告'];
+                for (let ek of exacts) {
+                    if (row[ek] !== undefined && row[ek] !== null && String(row[ek]).trim() !== "") {
+                        return String(row[ek]).trim();
+                    }
+                }
+                for (let k of keys) {
+                    const norm = k.toLowerCase().replace(/\s+/g, '');
+                    if (norm.includes('ai') && (norm.includes('內容') || norm.includes('診斷') || norm.includes('報告'))) {
+                        if (!norm.includes('標題')) {
+                            return String(row[k]).trim();
+                        }
+                    }
+                }
+            }
+            return "";
+        }
 
         function parseStandardCSV(text) {
             const cleanText = text.replace(/^\uFEFF/, "");
@@ -256,8 +810,8 @@
                     document.getElementById('data-status-badge').className = "text-green-600";
                 }
             } catch (e) {
-                console.log("防護機制：啟動全防禦隔離資料模式", e.message);
-                document.getElementById('data-status-badge').innerText = "● 離線展示模式 (已自動防護數據引擎)";
+                console.log("防護機制：啟動防禦資料隔離模式", e.message);
+                document.getElementById('data-status-badge').innerText = "● 離線展示模式 (數據已防護隔離)";
                 document.getElementById('data-status-badge').className = "text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200";
             }
 
@@ -278,8 +832,8 @@
 
                 return `
                     <div class="flex flex-col">
-                        <h4 class="flex items-center gap-2 text-lg font-black text-gray-700 mb-4 pb-2 border-b-2" style="border-color: ${cat.color};">
-                            <div class="w-3 h-3 rounded-full" style="background-color: ${cat.color};"></div>
+                        <h4 class="flex items-center gap-2 text-base font-black text-gray-700 mb-4 pb-2 border-b-2" style="border-color: ${cat.color};">
+                            <div class="w-2.5 h-2.5 rounded-full" style="background-color: ${cat.color};"></div>
                             ${cat.category}
                         </h4>
                         <ul class="space-y-3">
@@ -291,26 +845,52 @@
         }
 
         function initDropdowns() {
+            const semesters = [...new Set(allRows.map(r => getStrField(r, ['學期', 'Semester'])))].filter(Boolean).sort().reverse();
+            
             const semSelect = document.getElementById('select-semester');
-            const colSelect = document.getElementById('select-college');
-            if(!semSelect || !colSelect) return;
-
-            const semesters = [...new Set(allRows.map(r => r.學期))].filter(Boolean).sort().reverse();
             semSelect.innerHTML = semesters.map(s => `<option value="${s}">${s}</option>`).join('');
+            semSelect.addEventListener('change', () => { updateCollegeDropdown('single'); renderDashboard(); });
+            document.getElementById('select-college').addEventListener('change', () => { renderDashboard(); });
 
-            semSelect.addEventListener('change', () => { updateCollegeDropdown(); renderDashboard(); });
-            colSelect.addEventListener('change', () => { renderDashboard(); });
+            const semSelectA = document.getElementById('select-semester-a');
+            const semSelectB = document.getElementById('select-semester-b');
+            semSelectA.innerHTML = semesters.map(s => `<option value="${s}">${s}</option>`).join('');
+            semSelectB.innerHTML = semesters.map(s => `<option value="${s}">${s}</option>`).join('');
 
-            updateCollegeDropdown();
+            semSelectA.addEventListener('change', () => { updateCollegeDropdown('a'); renderDashboard(); });
+            document.getElementById('select-college-a').addEventListener('change', () => { renderDashboard(); });
+
+            semSelectB.addEventListener('change', () => { updateCollegeDropdown('b'); renderDashboard(); });
+            document.getElementById('select-college-b').addEventListener('change', () => { renderDashboard(); });
+
+            updateCollegeDropdown('single');
+            updateCollegeDropdown('a');
+            updateCollegeDropdown('b');
+
+            if (semSelectB.options.length > 1) {
+                semSelectB.selectedIndex = 1;
+                updateCollegeDropdown('b');
+            } else {
+                const colSelectB = document.getElementById('select-college-b');
+                if (colSelectB.options.length > 1) {
+                    colSelectB.selectedIndex = 1;
+                }
+            }
         }
 
-        function updateCollegeDropdown() {
-            const semSelect = document.getElementById('select-semester');
-            const colSelect = document.getElementById('select-college');
+        function updateCollegeDropdown(group) {
+            let semSelect, colSelect;
+            if (group === 'single') {
+                semSelect = document.getElementById('select-semester');
+                colSelect = document.getElementById('select-college');
+            } else {
+                semSelect = document.getElementById(`select-semester-${group}`);
+                colSelect = document.getElementById(`select-college-${group}`);
+            }
             if(!semSelect || !colSelect) return;
 
             const sem = semSelect.value;
-            const currentUnits = [...new Set(allRows.filter(r => r.學期 === sem).map(r => r.單位))].filter(Boolean);
+            const currentUnits = [...new Set(allRows.filter(r => getStrField(r, ['學期', 'Semester']) === sem).map(r => getStrField(r, ['單位', 'Department', 'College'])))].filter(Boolean);
             
             const sortedColleges = [
                 ...PREFERRED_ORDER.filter(name => currentUnits.includes(name)),
@@ -320,95 +900,175 @@
             colSelect.innerHTML = sortedColleges.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
-        // 🚀 核心修改：優化排版判定規則，防止 86% 等單純數據行被加粗
-        function formatPlainTextToHtml(text) {
-            if (!text) return "";
-            if (/<[a-z][\s\S]*>/i.test(text)) return text;
+        // ===================================================
+        // ⚖️ 核心切換模式：整組區塊（Container）隱藏/顯示
+        // ===================================================
+        function toggleDashboardMode() {
+            const btnText = document.getElementById('toggle-text');
+            const btnIcon = document.getElementById('toggle-icon');
+            
+            const labelSingle = document.getElementById('label-mode-single');
+            const labelCompare = document.getElementById('label-mode-compare');
 
-            const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
-            return lines.map(line => {
-                // 修正後的正規表達式：只認「🔹、✨、🔍、💡」特殊前綴，或者「數字後方緊跟半形點.或全形頓號、」才當作大標題
-                if (/^(🔹|✨|🔍|💡|[a-zA-Z0-9]+\s*[\.、]|[一二三四五六七八九十建議\s]+[\.、])/.test(line)) {
-                    return `<div class="report-heading-line">${line}</div>`;
-                }
-                // 辨識清單項
-                if (/^([\-\*•])/.test(line)) {
-                    const cleanLine = line.replace(/^[\-\*•]\s*/, '');
-                    return `<div class="report-bullet-line">${cleanLine}</div>`;
-                }
-                // 普通內文（包含 86%、44% 等純數據起頭的句子）
-                return `<p class="report-text-line">${line}</p>`;
-            }).join('');
+            const pnlSingle = document.getElementById('controls-single-panel');
+            const pnlCompare = document.getElementById('controls-compare-panel');
+
+            const kpiSingles = document.querySelectorAll('.kpi-single');
+            const kpiCompares = document.querySelectorAll('.kpi-compare');
+
+            const scoresSingle = document.getElementById('scores-single-view');
+            const scoresCompare = document.getElementById('scores-compare-view');
+
+            // 🔮 整組視圖容器開關 (防止 Chart.js 覆蓋 Canvas inline style 導致重疊)
+            const chartsSingleView = document.getElementById('charts-single-view');
+            const chartsCompareView = document.getElementById('charts-compare-view');
+
+            const aiSingle = document.getElementById('ai-single-view');
+            const aiCompare = document.getElementById('ai-compare-view');
+
+            if (currentMode === 'single') {
+                currentMode = 'compare';
+                btnText.innerText = "切換回單一視角模式";
+                btnIcon.innerText = "🔍";
+
+                labelSingle.classList.add('hidden');
+                labelCompare.classList.remove('hidden');
+
+                pnlSingle.classList.add('hidden');
+                pnlCompare.classList.remove('hidden');
+
+                kpiSingles.forEach(el => el.classList.add('hidden'));
+                kpiCompares.forEach(el => el.classList.remove('hidden'));
+
+                scoresSingle.classList.add('hidden');
+                scoresCompare.classList.remove('hidden');
+
+                // 移除對照組 hidden，隱藏單一組
+                chartsSingleView.classList.add('hidden');
+                chartsCompareView.classList.remove('hidden');
+
+                aiSingle.classList.add('hidden');
+                aiCompare.classList.remove('hidden');
+            } else {
+                currentMode = 'single';
+                btnText.innerText = "開啟雙維度對照模式";
+                btnIcon.innerText = "⚖️";
+
+                labelSingle.classList.remove('hidden');
+                labelCompare.classList.add('hidden');
+
+                pnlSingle.classList.remove('hidden');
+                pnlCompare.classList.add('hidden');
+
+                kpiSingles.forEach(el => el.classList.remove('hidden'));
+                kpiCompares.forEach(el => el.classList.add('hidden'));
+
+                scoresSingle.classList.remove('hidden');
+                scoresCompare.classList.add('hidden');
+
+                // 移除單一組 hidden，隱藏對照組
+                chartsSingleView.classList.remove('hidden');
+                chartsCompareView.classList.add('hidden');
+
+                aiSingle.classList.remove('hidden');
+                aiCompare.classList.add('hidden');
+            }
+
+            renderDashboard();
         }
 
         function renderDashboard() {
-            const semSelect = document.getElementById('select-semester');
-            const colSelect = document.getElementById('select-college');
-            if(!semSelect || !colSelect) return;
+            if (currentMode === 'single') {
+                renderSingleDashboard();
+            } else {
+                renderCompareDashboard();
+            }
+        }
 
-            const sem = semSelect.value;
-            const col = colSelect.value;
+        function renderSingleDashboard() {
+            const sem = document.getElementById('select-semester').value;
+            const col = document.getElementById('select-college').value;
+            if(!sem || !col) return;
+
+            document.getElementById('view-title-single').innerText = `${sem} - ${col}`;
+
+            const activeRaw = allRows.find(r => {
+                const rowSem = getStrField(r, ['學期', 'Semester']);
+                const rowUnit = getStrField(r, ['單位', 'Department', 'College']);
+                return rowSem === String(sem).trim() && rowUnit === String(col).trim();
+            }) || allRows[0];
             
-            document.getElementById('view-title').innerText = col || "無選擇";
-
-            const activeRaw = allRows.find(r => String(r.學期).trim() === String(sem).trim() && String(r.單位).trim() === String(col).trim()) || allRows[0];
             if(!activeRaw) return;
 
-            const count = parseInt(activeRaw.人數 || 0);
-
+            const count = getNumField(activeRaw, ['人數', '有效問卷總數', 'Count', 'Total', 'StudentCount']);
             document.getElementById('kpi-count').innerText = count.toLocaleString();
             
-            const oversea = parseInt(activeRaw.海外意願人數 || 0);
+            const oversea = getNumField(activeRaw, ['海外意願人數', '海外意願', 'OverseaIntent', 'Oversea']);
             document.getElementById('kpi-oversea').innerText = oversea.toLocaleString();
             document.getElementById('sub-oversea').innerText = `占比: ${(count > 0 ? (oversea/count)*100 : 0).toFixed(1)}%`;
 
-            const confidence = parseInt(activeRaw.信心增加人數 || 0);
+            const confidence = getNumField(activeRaw, ['信心增加人數', '增加出國信心', 'Confidence', 'ConfidenceCount']);
             document.getElementById('kpi-confidence').innerText = confidence.toLocaleString();
             document.getElementById('sub-confidence').innerText = `占比: ${(count > 0 ? (confidence/count)*100 : 0).toFixed(1)}%`;
 
-            document.getElementById('kpi-gender').innerText = `${activeRaw.女性人數 || 0} / ${activeRaw.男性人數 || 0}`;
+            const female = getNumField(activeRaw, ['女性人數', '女性', 'FemaleCount', 'Female']);
+            const male = getNumField(activeRaw, ['男性人數', '男性', 'MaleCount', 'Male']);
+            document.getElementById('kpi-gender').innerText = `${female} / ${male}`;
 
-            const metrics = ['自我調節學習', '學術英語&學科學習', 'Bloom認知', '課程參與', '自我效能'];
             const ids = ['srl', 'calp', 'cog', 'eng', 'se'];
+            const metricKeys = {
+                'srl': ['自我調節學習', 'SRL'],
+                'calp': ['學術英語&學科學習', '學術英語和學科學習', 'CALP'],
+                'cog': ['Bloom認知', '布魯姆認知', 'Cognition', 'Cog'],
+                'eng': ['課程參與', '課程投入', 'Engagement', 'Eng'],
+                'se': ['自我效能', 'SelfEfficacy', 'SE']
+            };
             
-            metrics.forEach((m, idx) => {
-                const val = parseFloat(activeRaw[m] || 0);
-                const elScore = document.getElementById(`score-${ids[idx]}`);
-                const elBar = document.getElementById(`bar-${ids[idx]}`);
+            ids.forEach(id => {
+                const val = getNumField(activeRaw, metricKeys[id]);
+                const elScore = document.getElementById(`score-${id}`);
+                const elBar = document.getElementById(`bar-${id}`);
                 if(elScore) elScore.innerText = val.toFixed(1);
                 if(elBar) elBar.style.width = `${(val/5)*100}%`;
             });
 
-            renderDistribution(activeRaw, count);
-            renderCharts(activeRaw);
+            renderSingleDistribution(activeRaw, count);
+            renderSingleCharts(activeRaw);
 
-            const rTitle = activeRaw.AI報告標題 || `${sem} 學期 ${col} EMI 教學數據洞察報告`;
-            const rawContent = activeRaw.AI報告內容 || "尚未在雲端表格中填寫此單位的 AI 智能診斷內容。請在 Google Sheets 的「AI報告標題」與「AI報告內容」欄位中進行編修。";
-            const processedHtml = formatPlainTextToHtml(rawContent);
+            const rTitle = getAIField(activeRaw, 'title') || `${sem} 學期 ${col} EMI 教學數據洞察報告`;
+            const rawContent = getAIField(activeRaw, 'content') || "尚未在雲端表格中填寫此單位的 AI 智能診斷內容。請在 Google Sheets 的「AI報告標題」與「AI報告內容」欄位中進行編修。";
             
-            document.getElementById('report-content').innerHTML = `<h2>${rTitle}</h2><div>${processedHtml}</div>`;
+            document.getElementById('report-content').innerHTML = `<h2>${rTitle}</h2><div>${formatPlainTextToHtml(rawContent)}</div>`;
         }
 
-        function renderDistribution(raw, total) {
+        function renderSingleDistribution(raw, total) {
+            const female = getNumField(raw, ['女性人數', '女性', 'FemaleCount', 'Female']);
+            const male = getNumField(raw, ['男性人數', '男性', 'MaleCount', 'Male']);
+            const firstEmi = getNumField(raw, ['第一次修EMI人數', '第一次EMI人數', 'FirstEMICount', 'FirstEMI']);
+            const nonFirstEmi = getNumField(raw, ['非第一次修EMI人數', '非第一次EMI人數', 'NonFirstEMICount', 'NonFirstEMI']);
+            const confidence = getNumField(raw, ['信心增加人數', '增加出國信心', 'Confidence', 'ConfidenceCount']);
+            const oversea = getNumField(raw, ['海外意願人數', '海外意願', 'OverseaIntent', 'Oversea']);
+
             const items = [
-                { label: '生理性別 (女性/男性)', val: parseInt(raw.女性人數 || 0), pos: '女性', neg: '男性' },
-                { label: '這是第一次修 EMI (是/否)', val: parseInt(raw.第一次修EMI人數 || 0), pos: '是', neg: '否' },
-                { label: 'EMI 增加出國信心 (是/否)', val: parseInt(raw.信心增加人數 || 0), pos: '是', neg: '否' },
-                { label: '有意願海外讀書工作 (是/否)', val: parseInt(raw.海外意願人數 || 0), pos: '是', neg: '否' }
+                { label: '生理性別 (女性/男性)', val: female, negVal: male, pos: '女性', neg: '男性' },
+                { label: '這是第一次修 EMI (是/否)', val: firstEmi, negVal: nonFirstEmi, pos: '是', neg: '否' },
+                { label: 'EMI 增加出國信心 (是/否)', val: confidence, negVal: (total - confidence), pos: '是', neg: '否' },
+                { label: '有意願海外讀書工作 (是/否)', val: oversea, negVal: (total - oversea), pos: '是', neg: '否' }
             ];
 
-            const container = document.getElementById('distribution-container');
+            const container = document.getElementById('distribution-single-container');
             if(!container) return;
             container.innerHTML = items.map(item => {
-                const pct = total > 0 ? (item.val / total) * 100 : 0;
+                const itemTotal = item.val + item.negVal;
+                const pct = itemTotal > 0 ? (item.val / itemTotal) * 100 : 0;
                 return `
                     <div>
-                        <p class="text-lg font-black text-gray-600 mb-3 text-left">${item.label}</p>
+                        <p class="text-sm font-black text-gray-600 mb-2 text-left">${item.label}</p>
                         <div class="bg-stats-bar shadow-inner">
-                            <div class="bg-stats-segment" style="width: ${pct}%; background-color: #9BADC1;">${item.val}</div>
-                            <div class="bg-stats-segment" style="width: ${100 - pct}%; background-color: #cbd5e1; color: #1e293b;">${total - item.val}</div>
+                            <div class="bg-stats-segment" style="width: ${pct}%; background-color: #9BADC1;">${item.val}人</div>
+                            <div class="bg-stats-segment" style="width: ${100 - pct}%; background-color: #cbd5e1; color: #1e293b;">${item.negVal}人</div>
                         </div>
-                        <div class="flex justify-between text-sm text-gray-400 mt-2 font-black italic">
+                        <div class="flex justify-between text-xs text-gray-400 mt-1 font-black italic">
                             <span>${item.pos}</span>
                             <span>${item.neg}</span>
                         </div>
@@ -417,19 +1077,19 @@
             }).join('');
         }
 
-        function renderCharts(raw) {
+        function renderSingleCharts(raw) {
+            // 1. 雷達圖
             const radarVals = [
-                parseFloat(raw.自我調節學習 || 0),
-                parseFloat(raw['學術英語&學科學習'] || 0),
-                parseFloat(raw.Bloom認知 || 0),
-                parseFloat(raw.課程參與 || 0),
-                parseFloat(raw.自我效能 || 0)
+                getNumField(raw, ['自我調節學習', 'SRL']),
+                getNumField(raw, ['學術英語&學科學習', '學術英語和學科學習', 'CALP']),
+                getNumField(raw, ['Bloom認知', '布魯姆認知', 'Cognition', 'Cog']),
+                getNumField(raw, ['課程參與', 'Engagement', 'Eng']),
+                getNumField(raw, ['自我效能', 'SelfEfficacy', 'SE'])
             ];
-
             const ctxRadar = document.getElementById('radarChart');
             if (ctxRadar) {
-                if (chartRadar) chartRadar.destroy();
-                chartRadar = new Chart(ctxRadar, {
+                if (chartRadarSingle) chartRadarSingle.destroy();
+                chartRadarSingle = new Chart(ctxRadar, {
                     type: 'radar',
                     data: {
                         labels: ['自我調節學習', '學術英語&學科學習', 'Bloom認知', '課程參與', '自我效能'],
@@ -438,7 +1098,7 @@
                     options: { 
                         responsive: true, 
                         maintainAspectRatio: false, 
-                        scales: { r: { max: 5, min: 0, ticks: { stepSize: 1, display: false }, pointLabels: { font: { size: 16, weight: '900', family: '-apple-system, BlinkMacSystemFont, sans-serif' }, color: '#334155' } } }, 
+                        scales: { r: { max: 5, min: 0, ticks: { stepSize: 1, display: false }, pointLabels: { font: { size: 12, weight: '800' }, color: '#334155' } } }, 
                         plugins: { legend: { display: false } } 
                     },
                     plugins: [{
@@ -450,7 +1110,7 @@
                                 meta.data.forEach((point, index) => {
                                     const val = (dataset.data[index] || 0).toFixed(1);
                                     ctx.fillStyle = '#1e293b';
-                                    ctx.font = 'bold 13px sans-serif';
+                                    ctx.font = 'bold 12px sans-serif';
                                     ctx.textAlign = 'center';
                                     const angle = r.getIndexAngle(index) - Math.PI / 2;
                                     const xOffset = Math.cos(angle) * 15;
@@ -463,26 +1123,33 @@
                 });
             }
 
+            // 2. 教學活動占比圖
+            const teachersCount = getNumField(raw, ['教師講授', '講授', 'Lecture']);
+            const interaction1 = getNumField(raw, ['師生互動', 'Interactive1']);
+            const interaction2 = getNumField(raw, ['生生互動', 'Interactive2']);
+            const reportCount = getNumField(raw, ['學生報告', '報告', 'Presentation']);
+            const otherCount = getNumField(raw, ['其他', 'Others']);
+
             const ctxActivity = document.getElementById('activityChart');
             if (ctxActivity) {
-                if (chartActivity) chartActivity.destroy();
-                chartActivity = new Chart(ctxActivity, {
+                if (chartActivitySingle) chartActivitySingle.destroy();
+                chartActivitySingle = new Chart(ctxActivity, {
                     type: 'bar',
                     data: {
                         labels: ['教師講授', '師生互動', '生生互動', '學生報告', '其他'],
-                        datasets: [{ data: [parseInt(raw.教師講授||0), parseInt(raw.師生互動||0), parseInt(raw.生生互動||0), parseInt(raw.學生報告||0), parseInt(raw.其他||0)], backgroundColor: ['#9BADC1', '#E2B4BD', '#B9B1D2', '#E2B4BD', '#cbd5e1'] }]
+                        datasets: [{ data: [teachersCount, interaction1, interaction2, reportCount, otherCount], backgroundColor: ['#9BADC1', '#E2B4BD', '#B9B1D2', '#E2B4BD', '#cbd5e1'] }]
                     },
                     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
                 });
             }
 
-            const trendKeys = Object.keys(raw).filter(k => /^(SRL|CALP|Cog|Eng|SE)\d+$/.test(k));
-            const trendVals = trendKeys.map(k => parseFloat(raw[k]) || 0);
-
+            // 3. 30細項趨勢
+            const trendKeys = Object.keys(raw).filter(k => /^(SRL|CALP|Cog|Eng|SE)\d+$/i.test(k));
+            const trendVals = trendKeys.map(k => getMetricValue(raw, k));
             const ctxTrend = document.getElementById('trendChart');
             if (ctxTrend) {
-                if (chartTrend) chartTrend.destroy();
-                chartTrend = new Chart(ctxTrend, {
+                if (chartTrendSingle) chartTrendSingle.destroy();
+                chartTrendSingle = new Chart(ctxTrend, {
                     type: 'bar',
                     data: {
                         labels: trendKeys,
@@ -496,9 +1163,277 @@
             }
         }
 
-        function toggleReport() {
-            const block = document.getElementById('report-block');
-            const arrow = document.getElementById('report-arrow');
+        function renderCompareDashboard() {
+            const semA = document.getElementById('select-semester-a').value;
+            const colA = document.getElementById('select-college-a').value;
+            const semB = document.getElementById('select-semester-b').value;
+            const colB = document.getElementById('select-college-b').value;
+
+            document.getElementById('view-title-a').innerText = `${semA} ${colA || '無'}`;
+            document.getElementById('view-title-b').innerText = `${semB} ${colB || '無'}`;
+
+            const dataA = allRows.find(r => {
+                const rowSem = getStrField(r, ['學期', 'Semester']);
+                const rowUnit = getStrField(r, ['單位', 'Department', 'College']);
+                return rowSem === String(semA).trim() && rowUnit === String(colA).trim();
+            }) || allRows[0];
+            
+            const dataB = allRows.find(r => {
+                const rowSem = getStrField(r, ['學期', 'Semester']);
+                const rowUnit = getStrField(r, ['單位', 'Department', 'College']);
+                return rowSem === String(semB).trim() && rowUnit === String(colB).trim();
+            }) || allRows[0];
+
+            if(!dataA || !dataB) return;
+
+            const countA = getNumField(dataA, ['人數', '有效問卷總數', 'Count', 'Total', 'StudentCount']);
+            const countB = getNumField(dataB, ['人數', '有效問卷總數', 'Count', 'Total', 'StudentCount']);
+            document.getElementById('kpi-count-a').innerText = countA.toLocaleString();
+            document.getElementById('kpi-count-b').innerText = countB.toLocaleString();
+
+            const overseaA = getNumField(dataA, ['海外意願人數', '海外意願', 'OverseaIntent', 'Oversea']);
+            const overseaB = getNumField(dataB, ['海外意願人數', '海外意願', 'OverseaIntent', 'Oversea']);
+            document.getElementById('kpi-oversea-a').innerText = overseaA.toLocaleString();
+            document.getElementById('kpi-oversea-b').innerText = overseaB.toLocaleString();
+            document.getElementById('sub-oversea-a').innerText = `${(countA > 0 ? (overseaA/countA)*100 : 0).toFixed(1)}%`;
+            document.getElementById('sub-oversea-b').innerText = `${(countB > 0 ? (overseaB/countB)*100 : 0).toFixed(1)}%`;
+
+            const confidenceA = getNumField(dataA, ['信心增加人數', '增加出國信心', 'Confidence', 'ConfidenceCount']);
+            const confidenceB = getNumField(dataB, ['信心增加人數', '增加出國信心', 'Confidence', 'ConfidenceCount']);
+            document.getElementById('kpi-confidence-a').innerText = confidenceA.toLocaleString();
+            document.getElementById('kpi-confidence-b').innerText = confidenceB.toLocaleString();
+            document.getElementById('sub-confidence-a').innerText = `${(countA > 0 ? (confidenceA/countA)*100 : 0).toFixed(1)}%`;
+            document.getElementById('sub-confidence-b').innerText = `${(countB > 0 ? (confidenceB/countB)*100 : 0).toFixed(1)}%`;
+
+            const femaleA = getNumField(dataA, ['女性人數', '女性', 'FemaleCount', 'Female']);
+            const maleA = getNumField(dataA, ['男性人數', '男性', 'MaleCount', 'Male']);
+            const femaleB = getNumField(dataB, ['女性人數', '女性', 'FemaleCount', 'Female']);
+            const maleB = getNumField(dataB, ['男性人數', '男性', 'MaleCount', 'Male']);
+            document.getElementById('kpi-gender-a').innerText = `${femaleA} / ${maleA}`;
+            document.getElementById('kpi-gender-b').innerText = `${femaleB} / ${maleB}`;
+
+            const ids = ['srl', 'calp', 'cog', 'eng', 'se'];
+            const metricKeys = {
+                'srl': ['自我調節學習', 'SRL'],
+                'calp': ['學術英語&學科學習', '學術英語和學科學習', 'CALP'],
+                'cog': ['Bloom認知', '布魯姆認知', 'Cognition', 'Cog'],
+                'eng': ['課程參與', '課程投入', 'Engagement', 'Eng'],
+                'se': ['自我效能', 'SelfEfficacy', 'SE']
+            };
+
+            ids.forEach(id => {
+                const valA = getNumField(dataA, metricKeys[id]);
+                const valB = getNumField(dataB, metricKeys[id]);
+
+                document.getElementById(`score-${id}-a`).innerText = valA.toFixed(1);
+                document.getElementById(`score-${id}-b`).innerText = valB.toFixed(1);
+
+                const totalPct = valA + valB;
+                const pctA = totalPct > 0 ? (valA / totalPct) * 100 : 50;
+                const pctB = totalPct > 0 ? (valB / totalPct) * 100 : 50;
+
+                document.getElementById(`bar-${id}-a`).style.width = `${pctA}%`;
+                document.getElementById(`bar-${id}-b`).style.width = `${pctB}%`;
+            });
+
+            renderCompareBackground(dataA, countA, dataB, countB);
+            renderCompareCharts(dataA, dataB, semA, colA, semB, colB);
+
+            const rTitleA = getAIField(dataA, 'title') || `${semA} ${colA} EMI 診斷報告`;
+            const rTitleB = getAIField(dataB, 'title') || `${semB} ${colB} EMI 診斷報告`;
+            const rawContentA = getAIField(dataA, 'content') || "尚未填寫此對照單位的 AI 診斷內容。";
+            const rawContentB = getAIField(dataB, 'content') || "尚未填寫此對照單位的 AI 診斷內容。";
+
+            document.getElementById('report-a-title-badge').innerText = `${semA} - ${colA}`;
+            document.getElementById('report-b-title-badge').innerText = `${semB} - ${colB}`;
+
+            document.getElementById('report-content-a').innerHTML = `<h2>${rTitleA}</h2><div>${formatPlainTextToHtml(rawContentA)}</div>`;
+            document.getElementById('report-content-b').innerHTML = `<h2>${rTitleB}</h2><div>${formatPlainTextToHtml(rawContentB)}</div>`;
+        }
+
+        function renderCompareBackground(rawA, totalA, rawB, totalB) {
+            const femaleA = getNumField(rawA, ['女性人數', '女性', 'FemaleCount', 'Female']);
+            const maleA = getNumField(rawA, ['男性人數', '男性', 'MaleCount', 'Male']);
+            const firstEmiA = getNumField(rawA, ['第一次修EMI人數', '第一次EMI人數', 'FirstEMICount', 'FirstEMI']);
+            const nonFirstEmiA = getNumField(rawA, ['非第一次修EMI人數', '非第一次EMI人數', 'NonFirstEMICount', 'NonFirstEMI']);
+            const confidenceA = getNumField(rawA, ['信心增加人數', '增加出國信心', 'Confidence', 'ConfidenceCount']);
+            const overseaA = getNumField(rawA, ['海外意願人數', '海外意願', 'OverseaIntent', 'Oversea']);
+
+            const femaleB = getNumField(rawB, ['女性人數', '女性', 'FemaleCount', 'Female']);
+            const maleB = getNumField(rawB, ['男性人數', '男性', 'MaleCount', 'Male']);
+            const firstEmiB = getNumField(rawB, ['第一次修EMI人數', '第一次EMI人數', 'FirstEMICount', 'FirstEMI']);
+            const nonFirstEmiB = getNumField(rawB, ['非第一次修EMI人數', '非第一次EMI人數', 'NonFirstEMICount', 'NonFirstEMI']);
+            const confidenceB = getNumField(rawB, ['信心增加人數', '增加出國信心', 'Confidence', 'ConfidenceCount']);
+            const overseaB = getNumField(rawB, ['海外意願人數', '海外意願', 'OverseaIntent', 'Oversea']);
+
+            const items = [
+                { label: '生理性別 (女性比例 %)', valA: femaleA, negValA: maleA, valB: femaleB, negValB: maleB },
+                { label: '這是第一次修 EMI (是 %)', valA: firstEmiA, negValA: nonFirstEmiA, valB: firstEmiB, negValB: nonFirstEmiB },
+                { label: 'EMI 增加出國信心 (是 %)', valA: confidenceA, negValA: (totalA - confidenceA), valB: confidenceB, negValB: (totalB - confidenceB) },
+                { label: '有意願海外讀書工作 (是 %)', valA: overseaA, negValA: (totalA - overseaA), valB: overseaB, negValB: (totalB - overseaB) }
+            ];
+
+            const container = document.getElementById('distribution-compare-container');
+            if(!container) return;
+
+            container.innerHTML = items.map(item => {
+                const totalRowA = item.valA + item.negValA;
+                const totalRowB = item.valB + item.negValB;
+
+                const pctA = totalRowA > 0 ? (item.valA / totalRowA) * 100 : 0;
+                const pctB = totalRowB > 0 ? (item.valB / totalRowB) * 100 : 0;
+
+                return `
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span class="text-xs font-black text-[#8697A8]">${pctA.toFixed(1)}%</span>
+                            <p class="text-sm font-black text-gray-700 text-center">${item.label}</p>
+                            <span class="text-xs font-black text-[#C49B9B]">${pctB.toFixed(1)}%</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-stats-bar flex-row-reverse">
+                                <div class="bg-stats-segment" style="width: ${pctA}%; background-color: #8697A8;">${item.valA}人</div>
+                            </div>
+                            <div class="bg-stats-bar">
+                                <div class="bg-stats-segment" style="width: ${pctB}%; background-color: #C49B9B;">${item.valB}人</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderCompareCharts(rawA, rawB, semA, colA, semB, colB) {
+            const labelA = `${semA} ${colA}`;
+            const labelB = `${semB} ${colB}`;
+
+            // 1. 雙向重疊雷達
+            const radarA = [
+                getNumField(rawA, ['自我調節學習', 'SRL']),
+                getNumField(rawA, ['學術英語&學科學習', '學術英語和學科學習', 'CALP']),
+                getNumField(rawA, ['Bloom認知', '布魯姆認知', 'Cognition', 'Cog']),
+                getNumField(rawA, ['課程參與', 'Engagement', 'Eng']),
+                getNumField(rawA, ['自我效能', 'SelfEfficacy', 'SE'])
+            ];
+            const radarB = [
+                getNumField(rawB, ['自我調節學習', 'SRL']),
+                getNumField(rawB, ['學術英語&學科學習', '學術英語和學科學習', 'CALP']),
+                getNumField(rawB, ['Bloom認知', '布魯姆認知', 'Cognition', 'Cog']),
+                getNumField(rawB, ['課程參與', 'Engagement', 'Eng']),
+                getNumField(rawB, ['自我效能', 'SelfEfficacy', 'SE'])
+            ];
+
+            const ctxRadar = document.getElementById('comparisonRadarChart');
+            if (ctxRadar) {
+                if (chartRadarCompare) chartRadarCompare.destroy();
+                chartRadarCompare = new Chart(ctxRadar, {
+                    type: 'radar',
+                    data: {
+                        labels: ['自我調節學習', '學術英語&學科學習', 'Bloom認知', '課程參與', '自我效能'],
+                        datasets: [
+                            { label: labelA, data: radarA, backgroundColor: 'rgba(134, 151, 168, 0.25)', borderColor: '#8697A8', borderWidth: 3, pointBackgroundColor: '#8697A8', pointRadius: 4 },
+                            { label: labelB, data: radarB, backgroundColor: 'rgba(196, 155, 155, 0.25)', borderColor: '#C49B9B', borderWidth: 3, pointBackgroundColor: '#C49B9B', pointRadius: 4 }
+                        ]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        scales: { r: { max: 5, min: 0, ticks: { stepSize: 1, display: false }, pointLabels: { font: { size: 12, weight: '800' }, color: '#334155' } } }, 
+                        plugins: { legend: { display: false } } 
+                    },
+                    plugins: [{
+                        id: 'comparisonRadarLabels',
+                        afterDatasetsDraw(chart) {
+                            const { ctx, scales: { r } } = chart;
+                            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                                const meta = chart.getDatasetMeta(datasetIndex);
+                                meta.data.forEach((point, index) => {
+                                    const val = (dataset.data[index] || 0).toFixed(1);
+                                    ctx.fillStyle = datasetIndex === 0 ? '#5a6b7c' : '#a27676';
+                                    ctx.font = 'bold 11px sans-serif';
+                                    ctx.textAlign = 'center';
+                                    const angle = r.getIndexAngle(index) - Math.PI / 2;
+                                    const xOffset = Math.cos(angle) * (15 + (datasetIndex * 5));
+                                    const yOffset = Math.sin(angle) * (15 + (datasetIndex * 5));
+                                    ctx.fillText(val, point.x + xOffset, point.y + yOffset + 4);
+                                });
+                            });
+                        }
+                    }]
+                });
+            }
+
+            // 2. 雙向並列活動占比條形圖
+            const teachersA = getNumField(rawA, ['教師講授', '講授', 'Lecture']);
+            const interact1A = getNumField(rawA, ['師生互動', 'Interactive1']);
+            const interact2A = getNumField(rawA, ['生生互動', 'Interactive2']);
+            const reportA = getNumField(rawA, ['學生報告', '報告', 'Presentation']);
+            const otherA = getNumField(rawA, ['其他', 'Others']);
+
+            const teachersB = getNumField(rawB, ['教師講授', '講授', 'Lecture']);
+            const interact1B = getNumField(rawB, ['師生互動', 'Interactive1']);
+            const interact2B = getNumField(rawB, ['生生互動', 'Interactive2']);
+            const reportB = getNumField(rawB, ['學生報告', '報告', 'Presentation']);
+            const otherB = getNumField(rawB, ['其他', 'Others']);
+
+            const activityA = [teachersA, interact1A, interact2A, reportA, otherA];
+            const activityB = [teachersB, interact1B, interact2B, reportB, otherB];
+
+            const ctxActivity = document.getElementById('comparisonActivityChart');
+            if (ctxActivity) {
+                if (chartActivityCompare) chartActivityCompare.destroy();
+                chartActivityCompare = new Chart(ctxActivity, {
+                    type: 'bar',
+                    data: {
+                        labels: ['教師講授', '師生互動', '生生互動', '學生報告', '其他'],
+                        datasets: [
+                            { label: labelA, data: activityA, backgroundColor: '#8697A8', borderRadius: 6 },
+                            { label: labelB, data: activityB, backgroundColor: '#C49B9B', borderRadius: 6 }
+                        ]
+                    },
+                    options: { 
+                        indexAxis: 'y', 
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        plugins: { legend: { display: true, position: 'top', labels: { font: { weight: 'bold' } } } },
+                        scales: { x: { max: 100, title: { display: true, text: '百分比 (%)', font: { weight: 'bold' } } } }
+                    }
+                });
+            }
+
+            // 3. 雙向 30 細項雙折線趨勢圖
+            const trendKeys = Object.keys(rawA).filter(k => /^(SRL|CALP|Cog|Eng|SE)\d+$/i.test(k));
+            const trendA = trendKeys.map(k => getMetricValue(rawA, k));
+            const trendB = trendKeys.map(k => getMetricValue(rawB, k));
+
+            const ctxTrend = document.getElementById('comparisonTrendChart');
+            if (ctxTrend) {
+                if (chartTrendCompare) chartTrendCompare.destroy();
+                chartTrendCompare = new Chart(ctxTrend, {
+                    type: 'line',
+                    data: {
+                        labels: trendKeys,
+                        datasets: [
+                            { label: labelA, data: trendA, borderColor: '#8697A8', backgroundColor: 'rgba(134, 151, 168, 0.1)', borderWidth: 3, pointBackgroundColor: '#8697A8', fill: true, tension: 0.15 },
+                            { label: labelB, data: trendB, borderColor: '#C49B9B', backgroundColor: 'rgba(196, 155, 155, 0.1)', borderWidth: 3, pointBackgroundColor: '#C49B9B', fill: true, tension: 0.15 }
+                        ]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        scales: { y: { max: 5, min: 0, title: { display: true, text: '5分制得分', font: { weight: 'bold' } } } }, 
+                        plugins: { legend: { display: true, position: 'top', labels: { font: { weight: 'bold' } } } } 
+                    }
+                });
+            }
+        }
+
+        // ==========================================
+        // 介面收摺控制函數
+        // ==========================================
+        function toggleMapping() {
+            const block = document.getElementById('question-mapping-block');
+            const arrow = document.getElementById('mapping-arrow');
             if(!block || !arrow) return;
             if(block.classList.contains('hidden')) {
                 block.classList.remove('hidden');
@@ -507,6 +1442,49 @@
                 block.classList.add('hidden');
                 arrow.style.transform = 'rotate(0deg)';
             }
+        }
+
+        function toggleReportSingle() {
+            const block = document.getElementById('report-single-block');
+            const arrow = document.getElementById('report-single-arrow');
+            if(!block || !arrow) return;
+            if(block.classList.contains('hidden')) {
+                block.classList.remove('hidden');
+                arrow.style.transform = 'rotate(180deg)';
+            } else {
+                block.classList.add('hidden');
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function toggleReportCompare() {
+            const block = document.getElementById('report-compare-block');
+            const arrow = document.getElementById('report-compare-arrow');
+            if(!block || !arrow) return;
+            if(block.classList.contains('hidden')) {
+                block.classList.remove('hidden');
+                arrow.style.transform = 'rotate(180deg)';
+            } else {
+                block.classList.add('hidden');
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function formatPlainTextToHtml(text) {
+            if (!text) return "";
+            if (/<[a-z][\s\S]*>/i.test(text)) return text;
+
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
+            return lines.map(line => {
+                if (/^(🔹|✨|🔍|💡|[a-zA-Z0-9]+\s*[\.、]|[一二三四五六七八九十建議\s]+[\.、])/.test(line)) {
+                    return `<div class="report-heading-line">${line}</div>`;
+                }
+                if (/^([\-\*•])/.test(line)) {
+                    const cleanLine = line.replace(/^[\-\*•]\s*/, '');
+                    return `<div class="report-bullet-line">${cleanLine}</div>`;
+                }
+                return `<p class="report-text-line">${line}</p>`;
+            }).join('');
         }
     </script>
 </body>
